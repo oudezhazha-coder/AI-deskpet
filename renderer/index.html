@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 桌宠</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- 桌宠图片区域（正方形） -->
+  <div id="pet-area" class="pet-area-drag">
+    <img id="pet-image" src="" alt="桌宠" draggable="false">
+  </div>
+
+  <!-- AI 回复气泡（正方形正上方） -->
+  <div id="bubble" class="hidden">
+    <div id="bubble-text"></div>
+  </div>
+
+  <!-- 输入栏（正方形正下方） -->
+  <div id="input-bar" class="hidden">
+    <input id="chat-input" type="text" placeholder="和桌宠聊两句…" maxlength="200">
+    <button id="chat-send">发送</button>
+  </div>
+
+  <!-- 锁定遮罩 -->
+  <div id="lock-overlay" class="hidden"></div>
+
+  <!-- 右键菜单 -->
+  <div id="ctx-menu" class="hidden">
+    <div class="ctx-label">动画</div>
+    <div class="ctx-item" data-anim="none">无</div>
+    <div class="ctx-item" data-anim="light">轻量</div>
+    <div class="ctx-item active" data-anim="normal">正常</div>
+    <div class="ctx-label">窗口</div>
+    <div class="ctx-item" id="ctx-lock">🔒 锁定</div>
+    <div class="ctx-label">AI</div>
+    <div class="ctx-item" id="ctx-chat">💬 聊天</div>
+    <div class="ctx-item" id="ctx-history">📋 对话记录</div>
+    <div class="ctx-item" id="ctx-settings">⚙️ 设置</div>
+  </div>
+
+  <!-- 对话历史面板 -->
+  <div id="history-panel" class="hidden">
+    <div id="history-header">
+      <span>📋 对话记录（最近 10 条）</span>
+      <span id="history-close">✕</span>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

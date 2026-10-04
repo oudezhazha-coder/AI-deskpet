@@ -1,0 +1,15 @@
+{
+  "name": "ai-desktop-pet",
+  "version": "1.0.0",
+  "description": "AI 桌宠 — 桌面聊天精灵",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.3.3"
+  },
+  "allowScripts": {
+    "electron": true
+  }
+}

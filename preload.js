@@ -1,0 +1,21 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('petAPI', {
+  getConfig: () => ipcRenderer.invoke('get-config'),
+  setConfig: (cfg) => ipcRenderer.invoke('set-config', cfg),
+  getImage: () => ipcRenderer.invoke('get-image'),
+  getAIConfig: () => ipcRenderer.invoke('get-ai-config'),
+  setAIConfig: (cfg) => ipcRenderer.invoke('set-ai-config', cfg),
+  chat: (msg) => ipcRenderer.invoke('ai-chat', msg),
+  quitApp: () => ipcRenderer.invoke('quit-app'),
+  openSettings: () => ipcRenderer.invoke('open-settings'),
+
+  getHistory: () => ipcRenderer.invoke('get-chat-history'),
+  appendHistory: (entry) => ipcRenderer.invoke('append-chat-history', entry),
+
+  onConfigChanged: (cb) => {
+    const h = (_e, c) => cb(c);
+    ipcRenderer.on('config-changed', h);
+    return () => ipcRenderer.removeListener('config-changed', h);
+  },
+});
