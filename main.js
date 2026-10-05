@@ -79,6 +79,7 @@ function createPetWindow() {
   });
   petWin.setAlwaysOnTop(true, 'screen-saver');
   petWin.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  petWin.webContents.openDevTools();
   petWin.on('closed', () => { petWin = null; });
 }
 
@@ -105,13 +106,8 @@ function openSettingsWindow() {
   const sy = Math.round((sh - 620) / 2);
   settingsWin.setPosition(Math.max(sx, 0), Math.max(sy, 0));
   settingsWin.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
+  settingsWin.webContents.openDevTools();
   settingsWin.on('closed', () => { settingsWin = null; });
-
-  // 桌宠窗口放在设置窗口右边
-  if (petWin && !petWin.isDestroyed()) {
-    const [swX, swY] = settingsWin.getPosition();
-    petWin.setPosition(swX + 588, swY + 20);
-  }
 }
 
 // ===== 系统托盘 =====
@@ -148,6 +144,8 @@ ipcMain.handle('set-config', (_e, cfg) => {
   const c = getConfig();
   if (cfg.size !== undefined) c.size = cfg.size;
   if (cfg.locked !== undefined) c.locked = cfg.locked;
+  if (cfg.theme !== undefined) c.theme = cfg.theme;
+  if (cfg.colors !== undefined) c.colors = cfg.colors;
   saveConfig(c);
   if (petWin && !petWin.isDestroyed()) petWin.webContents.send('config-changed', c);
   if (cfg.size && petWin && !petWin.isDestroyed()) {
@@ -208,12 +206,23 @@ ipcMain.handle('quit-app', () => app.quit());
 ipcMain.handle('open-settings', () => openSettingsWindow());
 
 // 对话历史
-ipcMain.handle('get-chat-history', () => getChatHistory());
+ipcMain.handle('get-chat-history', () => {
+  const data = getChatHistory();
+  console.log('get-chat-history returning:', JSON.stringify(data).slice(0, 200));
+  return data;
+});
 ipcMain.handle('append-chat-history', (_e, entry) => {
   const h = getChatHistory();
   h.push(entry);
   saveChatHistory(h);
   return { success: true };
+});
+
+// ===== 窗口拖拽 =====
+ipcMain.on('drag-move', (_e, { x, y }) => {
+  if (petWin && !petWin.isDestroyed()) {
+    petWin.setPosition(Math.round(x), Math.round(y));
+  }
 });
 
 // ===== 生命周期 =====

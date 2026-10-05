@@ -33,6 +33,34 @@
       <div class="panel-title" style="margin-top:16px">🔒 窗口锁定</div>
       <div class="panel-desc">解锁后可拖拽移动桌宠位置</div>
       <button id="btn-lock" class="toggle-btn active">🔒 已锁定</button>
+
+      <div class="panel-title" style="margin-top:16px">🎨 输入栏换色</div>
+      <div class="panel-desc">点击色块选颜色，或点预设一键切换</div>
+      <div class="color-pickers">
+        <div class="cp-row">
+          <label>输入框背景</label>
+          <input type="color" id="cp-input-bg" value="#2a2a3e">
+        </div>
+        <div class="cp-row">
+          <label>输入框文字</label>
+          <input type="color" id="cp-input-text" value="#e0d8d0">
+        </div>
+        <div class="cp-row">
+          <label>发送键背景</label>
+          <input type="color" id="cp-send-bg" value="#4fc3f7">
+        </div>
+        <div class="cp-row">
+          <label>发送键文字</label>
+          <input type="color" id="cp-send-text" value="#1a1a2e">
+        </div>
+      </div>
+      <div class="preset-row">
+        <span class="preset-label">预设：</span>
+        <button class="theme-btn" data-theme="default">🔵 默认</button>
+        <button class="theme-btn" data-theme="ocean">💧 海洋</button>
+        <button class="theme-btn" data-theme="warm">🔥 暖阳</button>
+        <button class="theme-btn" data-theme="dark">🌙 暗紫</button>
+      </div>
     </div>
 
     <!-- 右侧：AI 设置 -->
@@ -68,6 +96,14 @@
         <span id="ai-status" class="status"></span>
       </div>
     </div>
+  </div>
+
+  <!-- 对话记录独立区域 -->
+  <div id="history-section">
+    <div class="panel-title">📋 对话记录</div>
+    <div class="panel-desc">最近 10 条与 AI 的对话</div>
+    <div id="settings-history"></div>
+    <button id="btn-refresh-history" style="margin-top:6px;padding:4px 10px;border:1px solid #dbb090;border-radius:6px;background:rgba(255,255,255,0.4);color:#7a4a2e;font-size:11px;cursor:pointer;align-self:flex-start">🔄 刷新</button>
   </div>
 
   <div id="footer">

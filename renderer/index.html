@@ -8,20 +8,21 @@
 </head>
 <body>
 
+  <!-- AI 回复气泡 -->
+  <div id="bubble" class="hidden">
+    <div id="bubble-text"></div>
+  </div>
+
   <!-- 桌宠图片区域（正方形） -->
   <div id="pet-area" class="pet-area-drag">
     <img id="pet-image" src="" alt="桌宠" draggable="false">
   </div>
 
-  <!-- AI 回复气泡（正方形正上方） -->
-  <div id="bubble" class="hidden">
-    <div id="bubble-text"></div>
-  </div>
-
-  <!-- 输入栏（正方形正下方） -->
+  <!-- 输入栏 -->
   <div id="input-bar" class="hidden">
     <input id="chat-input" type="text" placeholder="和桌宠聊两句…" maxlength="200">
     <button id="chat-send">发送</button>
+    <button id="chat-menu">⋮</button>
   </div>
 
   <!-- 锁定遮罩 -->

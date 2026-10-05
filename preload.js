@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('petAPI', {
   chat: (msg) => ipcRenderer.invoke('ai-chat', msg),
   quitApp: () => ipcRenderer.invoke('quit-app'),
   openSettings: () => ipcRenderer.invoke('open-settings'),
+  dragMove: (pos) => ipcRenderer.send('drag-move', pos),
 
   getHistory: () => ipcRenderer.invoke('get-chat-history'),
   appendHistory: (entry) => ipcRenderer.invoke('append-chat-history', entry),

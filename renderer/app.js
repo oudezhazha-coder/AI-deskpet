@@ -1,4 +1,5 @@
 const petImg = document.getElementById('pet-image');
+const petArea = document.getElementById('pet-area');
 const lockOverlay = document.getElementById('lock-overlay');
 const ctxMenu = document.getElementById('ctx-menu');
 const ctxItems = document.querySelectorAll('.ctx-item[data-anim]');
@@ -14,6 +15,7 @@ const bubbleText = document.getElementById('bubble-text');
 const historyPanel = document.getElementById('history-panel');
 const historyList = document.getElementById('history-list');
 const historyClose = document.getElementById('history-close');
+const chatMenu = document.getElementById('chat-menu');
 
 let cfg = { size: 100, locked: true, anim: 'normal' };
 let chatting = false;
@@ -27,16 +29,38 @@ function escapeHtml(t) {
   return el.innerHTML;
 }
 
+// ===== 缩放 =====
+function applySize(pct) {
+  const s = (pct || 100) / 100;
+  const base = 170;
+  const sz = Math.round(base * s);
+  petArea.style.width = sz + 'px';
+  petArea.style.height = sz + 'px';
+}
+
+// ===== 主题配色 =====
+const themes = {
+  default: { inputBg: '#2a2a3e', inputText: '#e0d8d0', sendBg: '#4fc3f7', sendText: '#1a1a2e' },
+  ocean:   { inputBg: '#1a237e', inputText: '#e3f2fd', sendBg: '#42a5f5', sendText: '#ffffff' },
+  warm:    { inputBg: '#3e2723', inputText: '#fbe9e7', sendBg: '#ff7043', sendText: '#ffffff' },
+  dark:    { inputBg: '#1a1a2e', inputText: '#bdbdbd', sendBg: '#6c5ce7', sendText: '#ffffff' },
+};
+
+function applyTheme(colors) {
+  if (!colors) colors = themes.default;
+  chatInput.style.background = colors.inputBg;
+  chatInput.style.color = colors.inputText;
+  chatSend.style.background = colors.sendBg;
+  chatSend.style.color = colors.sendText;
+}
+
 // ===== 加载图片 =====
 async function loadImage() {
-  console.log('loadImage called');
   try {
     const data = await window.petAPI.getImage();
-    console.log('got image data?', !!data);
     if (data) {
       petImg.src = data;
       petImg.style.display = 'block';
-      console.log('src set');
     }
   } catch (e) {
     console.error('loadImage error:', e);
@@ -49,6 +73,8 @@ async function loadConfig() {
   lockOverlay.classList.toggle('visible', cfg.locked !== false);
   updateLockLabel();
   ctxItems.forEach(el => el.classList.toggle('active', el.dataset.anim === (cfg.anim || 'normal')));
+  applySize(cfg.size || 100);
+  applyTheme(cfg.colors || themes.default);
 }
 
 // ===== 动画 =====
@@ -75,8 +101,6 @@ let hoverTimer = null;
 
 function showInput() {
   if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
-  if (chatting) return;
-  if (!bubble.classList.contains('hidden')) return;
   inputBar.classList.remove('hidden');
 }
 function hideInput() {
@@ -107,7 +131,7 @@ async function sendMessage() {
   msgHistory.push({ role: 'user', content: text });
 
   try {
-    const res = await window.petAPI.chat({ messages: msgHistory });
+    const res = await window.petAPI.chat({ messages: msgHistory.slice(-12) });
     if (!res || !res.success) {
       throw new Error(res?.error || '未知错误');
     }
@@ -117,8 +141,8 @@ async function sendMessage() {
     bubbleText.textContent = aiMsg;
     bubble.classList.remove('hidden');
     bouncePet();
+    chatting = false;
 
-    // 保存到持久对话历史（最多 10 条）
     window.petAPI.appendHistory({
       user: text,
       ai: aiMsg,
@@ -129,16 +153,15 @@ async function sendMessage() {
     bubbleTimer = setTimeout(() => {
       bubble.classList.add('hidden');
       bubbleTimer = null;
-      chatting = false;
     }, 60000);
   } catch (e) {
     bubbleText.textContent = '❌ ' + (e.message || '回复失败，请检查 AI 配置');
     bubble.classList.remove('hidden');
+    chatting = false;
     if (bubbleTimer) clearTimeout(bubbleTimer);
     bubbleTimer = setTimeout(() => {
       bubble.classList.add('hidden');
       bubbleTimer = null;
-      chatting = false;
     }, 4000);
   }
 }
@@ -148,7 +171,6 @@ chatInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') sendMessage();
 });
 
-// 焦点控制
 chatInput.addEventListener('focus', () => {
   if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
 });
@@ -195,25 +217,26 @@ historyPanel.addEventListener('click', e => {
   if (e.target === historyPanel) closeHistoryPanel();
 });
 
-// ===== 右键菜单 =====
-window.addEventListener('contextmenu', e => e.preventDefault());
+// ===== 菜单按钮（输入栏内 ⋮）=====
+chatMenu.addEventListener('click', () => {
+  ctxMenu.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    const btnRect = chatMenu.getBoundingClientRect();
+    const mRect = ctxMenu.getBoundingClientRect();
+    let left = btnRect.right - mRect.width;
+    let top = btnRect.top - mRect.height - 4;
+    if (left < 4) left = 4;
+    if (top < 4) top = 4;
+    if (left + mRect.width > window.innerWidth) left = window.innerWidth - mRect.width - 4;
+    if (top + mRect.height > window.innerHeight) top = window.innerHeight - mRect.height - 4;
+    ctxMenu.style.left = left + 'px';
+    ctxMenu.style.top = top + 'px';
+  });
+});
 
+// ===== 点击菜单外关闭 =====
 document.addEventListener('mousedown', e => {
-  if (e.button === 2) {
-    e.preventDefault();
-    // 先显示才能测量实际尺寸
-    ctxMenu.style.left = e.clientX + 'px';
-    ctxMenu.style.top = e.clientY + 'px';
-    ctxMenu.classList.remove('hidden');
-    // 测量后修正，确保不超出视口
-    const rect = ctxMenu.getBoundingClientRect();
-    if (rect.right > window.innerWidth) {
-      ctxMenu.style.left = Math.max(0, window.innerWidth - rect.width) + 'px';
-    }
-    if (rect.bottom > window.innerHeight) {
-      ctxMenu.style.top = Math.max(0, window.innerHeight - rect.height) + 'px';
-    }
-  } else if (!ctxMenu.contains(e.target) && !historyPanel.contains(e.target)) {
+  if (!ctxMenu.contains(e.target) && !historyPanel.contains(e.target)) {
     ctxMenu.classList.add('hidden');
   }
 });
@@ -229,7 +252,10 @@ ctxChat.addEventListener('click', () => {
   showInput();
   setTimeout(() => chatInput.focus(), 100);
 });
-ctxHistory.addEventListener('click', showHistoryPanel);
+ctxHistory.addEventListener('click', () => {
+  ctxMenu.classList.add('hidden');
+  showHistoryPanel();
+});
 ctxSettings.addEventListener('click', () => {
   ctxMenu.classList.add('hidden');
   window.petAPI.openSettings();
@@ -241,6 +267,8 @@ window.petAPI.onConfigChanged(c => {
   lockOverlay.classList.toggle('visible', cfg.locked !== false);
   updateLockLabel();
   ctxItems.forEach(el => el.classList.toggle('active', el.dataset.anim === (cfg.anim || 'normal')));
+  if (c.size) applySize(c.size);
+  if (c.colors) applyTheme(c.colors);
 });
 
 // ===== 启动 =====
