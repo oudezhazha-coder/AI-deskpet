@@ -37,6 +37,7 @@ body {
 }
 #pet-image.bounce-n { animation: bn 0.5s cubic-bezier(0.22,1,0.36,1); }
 #pet-image.bounce-l { animation: bl 0.4s cubic-bezier(0.22,1,0.36,1); }
+#pet-image.bounce-alarm { animation: bx3 1.3s cubic-bezier(0.22,1,0.36,1); }
 
 @keyframes bn {
   0%   { transform: translateY(0) scale(1); }
@@ -53,6 +54,17 @@ body {
   45%  { transform: translateY(0) scale(0.98); }
   65%  { transform: translateY(-4px) scale(1.01); }
   80%  { transform: translateY(0) scale(0.99); }
+  100% { transform: translateY(0) scale(1); }
+}
+/* 闹钟：大蹦跶三下 */
+@keyframes bx3 {
+  0%   { transform: translateY(0) scale(1); }
+  10%  { transform: translateY(-32px) scale(1.12); }
+  18%  { transform: translateY(0) scale(0.93); }
+  28%  { transform: translateY(-24px) scale(1.08); }
+  35%  { transform: translateY(0) scale(0.95); }
+  43%  { transform: translateY(-12px) scale(1.04); }
+  50%  { transform: translateY(0) scale(0.97); }
   100% { transform: translateY(0) scale(1); }
 }
 
@@ -118,31 +130,6 @@ body {
   -webkit-app-region: no-drag;
 }
 #lock-overlay.visible { display: block; }
-
-/* ===== 闹钟通知 ===== */
-#alarm-notification {
-  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-  background: linear-gradient(135deg, #ff6f00, #ffab00);
-  color: white; font-size: 13px; font-weight: 700;
-  padding: 8px 16px; border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(255,111,0,0.4);
-  white-space: nowrap; z-index: 100; cursor: pointer;
-  display: flex; align-items: center; gap: 8px;
-  animation: alarm-pulse 1s ease-in-out infinite alternate;
-  transition: opacity 0.3s;
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-}
-#alarm-notification.hidden { display: none; }
-#alarm-notif-text { flex: 1; }
-#alarm-notif-close {
-  font-size: 14px; opacity: 0.7; cursor: pointer; line-height: 1;
-}
-#alarm-notif-close:hover { opacity: 1; }
-
-@keyframes alarm-pulse {
-  0% { transform: translateX(-50%) scale(1); box-shadow: 0 4px 20px rgba(255,111,0,0.4); }
-  100% { transform: translateX(-50%) scale(1.05); box-shadow: 0 6px 30px rgba(255,111,0,0.6); }
-}
 
 /* ===== 右键菜单 ===== */
 #ctx-menu {

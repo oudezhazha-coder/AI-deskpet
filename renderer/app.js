@@ -274,22 +274,19 @@ window.petAPI.onConfigChanged(c => {
 });
 
 // ===== 闹钟提醒 =====
-const alarmNotif = document.getElementById('alarm-notification');
-const alarmNotifText = document.getElementById('alarm-notif-text');
-const alarmNotifClose = document.getElementById('alarm-notif-close');
-
 window.petAPI.onAlarmRing(data => {
   const timeStr = data.time || '';
   const label = data.label || '闹钟';
-  alarmNotifText.textContent = '\u23f0 ' + label + ' - ' + timeStr;
-  alarmNotif.classList.remove('hidden');
-});
-
-// 点击通知关闭
-alarmNotif.addEventListener('click', () => alarmNotif.classList.add('hidden'));
-alarmNotifClose.addEventListener('click', (e) => {
-  e.stopPropagation();
-  alarmNotif.classList.add('hidden');
+  bubbleText.textContent = '\u23f0 ' + label + ' - ' + timeStr + ' 到点了\uff01';
+  bubble.classList.remove('hidden');
+  petImg.classList.remove('bounce-alarm');
+  void petImg.offsetWidth;
+  petImg.classList.add('bounce-alarm');
+  if (bubbleTimer) clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(() => {
+    bubble.classList.add('hidden');
+    bubbleTimer = null;
+  }, 30000);
 });
 
 // ===== 启动 =====
