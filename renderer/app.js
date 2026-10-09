@@ -273,6 +273,20 @@ window.petAPI.onConfigChanged(c => {
   if (c.pet) loadImage();
 });
 
+// ===== 闹钟提醒 =====
+const alarmNotif = document.getElementById('alarm-notification');
+const alarmNotifText = document.getElementById('alarm-notif-text');
+let alarmNotifTimer = null;
+
+window.petAPI.onAlarmRing(data => {
+  const timeStr = data.time || '';
+  const label = data.label || '闹钟';
+  alarmNotifText.textContent = '\u23f0 ' + label + ' - ' + timeStr;
+  alarmNotif.classList.remove('hidden');
+  clearTimeout(alarmNotifTimer);
+  alarmNotifTimer = setTimeout(() => alarmNotif.classList.add('hidden'), 10000);
+});
+
 // ===== 启动 =====
 loadConfig();
 loadImage();

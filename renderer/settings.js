@@ -299,3 +299,148 @@ loadSettingsHistory();
 loadPetList();
 
 document.getElementById('btn-refresh-history')?.addEventListener('click', loadSettingsHistory);
+
+// ===== 闹钟 =====
+const alarmList = document.getElementById('alarm-list');
+const alarmCount = document.getElementById('alarm-count');
+const btnAddAlarm = document.getElementById('btn-add-alarm');
+const alarmModal = document.getElementById('alarm-modal');
+const alarmTimeInput = document.getElementById('alarm-time-input');
+const alarmLabelInput = document.getElementById('alarm-label-input');
+const alarmRepeatSelect = document.getElementById('alarm-repeat-select');
+const alarmDaysPicker = document.getElementById('alarm-days-picker');
+const alarmEditId = document.getElementById('alarm-edit-id');
+const alarmModalTitle = document.getElementById('alarm-modal-title');
+
+const REPEAT_LABELS = {
+  once: '仅一次', daily: '每天', weekday: '工作日',
+  weekend: '周末', custom: '自定义',
+};
+
+let alarms = [];
+
+function getDaysText(a) {
+  if (a.repeat === 'once') return '仅一次';
+  if (a.repeat === 'daily') return '每天';
+  if (a.repeat === 'weekday') return '周一至周五';
+  if (a.repeat === 'weekend') return '周末';
+  if (a.repeat === 'custom' && a.days) {
+    const names = ['日','一','二','三','四','五','六'];
+    return a.days.map(d => '周' + names[d]).join('、') || '自定义';
+  }
+  return '';
+}
+
+async function loadAlarms() {
+  alarms = await window.petAPI.getAlarms();
+  alarmCount.textContent = alarms.length + '/10';
+  alarmList.innerHTML = '';
+  alarms.forEach(a => {
+    const item = document.createElement('div');
+    item.className = 'alarm-item';
+    const labelText = a.label || '';
+    const timeStr = String(a.hour).padStart(2,'0') + ':' + String(a.minute).padStart(2,'0');
+    item.innerHTML =
+      '<div class="alarm-left">' +
+        '<span class="alarm-time">' + timeStr + '</span>' +
+        (labelText ? '<span class="alarm-label">' + escapeHtml(labelText) + '</span>' : '') +
+        '<span class="alarm-repeat">' + getDaysText(a) + '</span>' +
+      '</div>' +
+      '<div class="alarm-right">' +
+        '<label class="alarm-toggle">' +
+          '<input type="checkbox" ' + (a.enabled ? 'checked' : '') + '>' +
+          '<span class="alarm-toggle-slider"></span>' +
+        '</label>' +
+        '<button class="alarm-del-btn" title="删除">\u00d7</button>' +
+      '</div>';
+    // 开关
+    const toggle = item.querySelector('input[type=checkbox]');
+    toggle.addEventListener('change', async () => {
+      await window.petAPI.toggleAlarm(a.id, toggle.checked);
+    });
+    // 删除
+    const del = item.querySelector('.alarm-del-btn');
+    del.addEventListener('click', async () => {
+      if (!confirm('确定删除 ' + timeStr + ' 的闹钟？')) return;
+      await window.petAPI.deleteAlarm(a.id);
+      loadAlarms();
+    });
+    alarmList.appendChild(item);
+  });
+}
+
+// 天数选择器
+const dayBtns = document.querySelectorAll('.day-btn');
+let selectedDays = [];
+dayBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const d = parseInt(btn.dataset.d);
+    if (selectedDays.includes(d)) {
+      selectedDays = selectedDays.filter(x => x !== d);
+      btn.classList.remove('active');
+    } else {
+      selectedDays.push(d);
+      btn.classList.add('active');
+    }
+  });
+});
+
+alarmRepeatSelect.addEventListener('change', () => {
+  alarmDaysPicker.classList.toggle('hidden', alarmRepeatSelect.value !== 'custom');
+});
+
+// 添加 / 编辑闹钟
+btnAddAlarm.addEventListener('click', () => {
+  alarmModalTitle.textContent = '⏰ 添加闹钟';
+  alarmEditId.value = '';
+  alarmTimeInput.value = '08:00';
+  alarmLabelInput.value = '';
+  alarmRepeatSelect.value = 'daily';
+  alarmDaysPicker.classList.add('hidden');
+  selectedDays = [];
+  dayBtns.forEach(b => b.classList.remove('active'));
+  // 默认选工作日
+  selectedDays = [1,2,3,4,5];
+  dayBtns.forEach(b => {
+    if (selectedDays.includes(parseInt(b.dataset.d))) b.classList.add('active');
+  });
+  alarmModal.classList.remove('hidden');
+});
+
+document.getElementById('alarm-modal-confirm').addEventListener('click', async () => {
+  const timeVal = alarmTimeInput.value;
+  if (!timeVal) return;
+  const [h, m] = timeVal.split(':').map(Number);
+  const repeat = alarmRepeatSelect.value;
+  const alarm = {
+    hour: h, minute: m,
+    label: alarmLabelInput.value.trim(),
+    repeat: repeat,
+    enabled: true,
+  };
+  if (repeat === 'custom') {
+    alarm.days = [...selectedDays];
+  }
+  await window.petAPI.addAlarm(alarm);
+  alarmModal.classList.add('hidden');
+  loadAlarms();
+});
+
+document.getElementById('alarm-modal-cancel').addEventListener('click', () => {
+  alarmModal.classList.add('hidden');
+});
+
+// 接收闹钟提醒（桌宠窗口会显示通知）
+if (window.petAPI.onAlarmRing) {
+  window.petAPI.onAlarmRing(data => {
+    const msg = '\u23f0 ' + data.label + ' - ' + data.time;
+    console.log('[alarm]', msg);
+    // 如果有通知 API 就用它
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('\u23f0 ' + data.label, { body: data.time + ' 到点了！' });
+    }
+  });
+}
+
+// 启动
+loadAlarms();

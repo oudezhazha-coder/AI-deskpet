@@ -301,6 +301,34 @@ ipcMain.handle('ai-chat', async (_e, payload) => {
   }
 });
 
+// 闹钟
+ipcMain.handle('get-alarms', () => getAlarms());
+ipcMain.handle('save-alarms', (_e, alarms) => {
+  saveAlarms(alarms);
+  return { success: true };
+});
+ipcMain.handle('add-alarm', (_e, alarm) => {
+  const alarms = getAlarms();
+  if (alarms.length >= 10) return { success: false, error: '最多10个闹钟' };
+  alarm.id = 'alarm_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  alarm.enabled = alarm.enabled !== false;
+  alarms.push(alarm);
+  saveAlarms(alarms);
+  return { success: true, alarms };
+});
+ipcMain.handle('delete-alarm', (_e, id) => {
+  const alarms = getAlarms().filter(a => a.id !== id);
+  saveAlarms(alarms);
+  return { success: true, alarms };
+});
+ipcMain.handle('toggle-alarm', (_e, id, enabled) => {
+  const alarms = getAlarms();
+  const alarm = alarms.find(a => a.id === id);
+  if (alarm) alarm.enabled = enabled;
+  saveAlarms(alarms);
+  return { success: true, alarms };
+});
+
 ipcMain.handle('quit-app', () => app.quit());
 ipcMain.handle('open-settings', () => openSettingsWindow());
 
@@ -317,6 +345,50 @@ ipcMain.handle('append-chat-history', (_e, entry) => {
   return { success: true };
 });
 
+// ===== 闹钟 =====
+const alarmsPath = path.join(userDataPath, 'alarms.json');
+let alarmTimer = null;
+function getAlarms() {
+  return readJSON(alarmsPath, []);
+}
+function saveAlarms(arr) {
+  writeJSON(alarmsPath, arr);
+}
+function checkAlarms() {
+  const alarms = getAlarms();
+  if (!alarms.length) return;
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const today = now.getDay();
+  const timeStr = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  for (const a of alarms) {
+    if (!a.enabled) continue;
+    if (a.hour !== h || a.minute !== m) continue;
+    if (a._lastTriggered === timeStr + String(now.getDate())) continue;
+    const shouldRing = a.repeat === 'daily' || a.repeat === 'once'
+      || (a.repeat === 'weekday' && today >= 1 && today <= 5)
+      || (a.repeat === 'weekend' && (today === 0 || today === 6))
+      || (a.repeat === 'custom' && a.days && a.days.includes(today));
+    if (!shouldRing) continue;
+    a._lastTriggered = timeStr + String(now.getDate());
+    if (petWin && !petWin.isDestroyed()) {
+      petWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr });
+    }
+    if (settingsWin && !settingsWin.isDestroyed()) {
+      settingsWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr });
+    }
+    if (a.repeat === 'once') {
+      a.enabled = false;
+    }
+  }
+  saveAlarms(alarms);
+}
+function startAlarmTimer() {
+  if (alarmTimer) return;
+  alarmTimer = setInterval(checkAlarms, 30000);
+  setTimeout(checkAlarms, 1000);
+}
+
 // ===== 窗口拖拽 =====
 ipcMain.on('drag-move', (_e, { x, y }) => {
   if (petWin && !petWin.isDestroyed()) {
@@ -328,6 +400,7 @@ ipcMain.on('drag-move', (_e, { x, y }) => {
 app.whenReady().then(() => {
   createPetWindow();
   createTray();
+  startAlarmTimer();
 });
 
 app.on('window-all-closed', () => {});

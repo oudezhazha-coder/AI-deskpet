@@ -18,6 +18,18 @@ contextBridge.exposeInMainWorld('petAPI', {
   pickAndAddPet: (name) => ipcRenderer.invoke('pick-and-add-pet', name),
   deletePet: (name) => ipcRenderer.invoke('delete-pet', name),
 
+  getAlarms: () => ipcRenderer.invoke('get-alarms'),
+  addAlarm: (alarm) => ipcRenderer.invoke('add-alarm', alarm),
+  deleteAlarm: (id) => ipcRenderer.invoke('delete-alarm', id),
+  toggleAlarm: (id, enabled) => ipcRenderer.invoke('toggle-alarm', id, enabled),
+  saveAlarms: (alarms) => ipcRenderer.invoke('save-alarms', alarms),
+
+  onAlarmRing: (cb) => {
+    const h = (_e, data) => cb(data);
+    ipcRenderer.on('alarm-ring', h);
+    return () => ipcRenderer.removeListener('alarm-ring', h);
+  },
+
   onConfigChanged: (cb) => {
     const h = (_e, c) => cb(c);
     ipcRenderer.on('config-changed', h);

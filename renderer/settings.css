@@ -257,3 +257,70 @@ html, body {
 }
 .pet-card-wrap:hover .pet-del-btn { display: flex; }
 .pet-del-btn:hover { background: #ffcdd2; }
+
+/* ===== 闹钟 ===== */
+#alarm-section {
+  flex-shrink: 0;
+  background: rgba(255,248,235,0.65);
+  border-radius: 14px; padding: 16px;
+  border: 1px solid rgba(200,160,120,0.2);
+  backdrop-filter: blur(4px);
+  margin-top: 4px;
+}
+#alarm-section .panel-title { margin-bottom: 2px; }
+#alarm-section .panel-desc { margin-bottom: 8px; }
+.alarm-count-label { font-size: 11px; color: #b89570; font-weight: 400; }
+#alarm-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 240px; overflow-y: auto;
+}
+.alarm-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-radius: 8px;
+  background: rgba(255,255,255,0.3);
+  border: 1px solid rgba(200,160,120,0.15);
+}
+.alarm-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+.alarm-time { font-size: 18px; font-weight: 700; color: #7a4a2e; font-variant-numeric: tabular-nums; }
+.alarm-label { font-size: 11px; color: #5a3a22; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alarm-repeat { font-size: 10px; color: #a67c5a; background: rgba(200,160,120,0.12); padding: 1px 6px; border-radius: 4px; }
+.alarm-right { display: flex; align-items: center; gap: 6px; }
+.alarm-del-btn {
+  width: 20px; height: 20px; border-radius: 50%; border: none;
+  background: transparent; color: #b89570; font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.alarm-del-btn:hover { background: #ffebee; color: #c62828; }
+.alarm-toggle {
+  position: relative; display: inline-block; width: 36px; height: 20px; cursor: pointer;
+}
+.alarm-toggle input { opacity: 0; width: 0; height: 0; }
+.alarm-toggle-slider {
+  position: absolute; inset: 0; background: #dbb090;
+  border-radius: 10px; transition: 0.2s;
+}
+.alarm-toggle-slider::before {
+  content: ''; position: absolute; left: 2px; top: 2px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: white; transition: 0.2s;
+}
+.alarm-toggle input:checked + .alarm-toggle-slider { background: #4caf50; }
+.alarm-toggle input:checked + .alarm-toggle-slider::before { transform: translateX(16px); }
+.btn-add-alarm {
+  margin-top: 8px; padding: 6px 14px;
+  border: 1px solid #dbb090; border-radius: 8px;
+  background: rgba(255,255,255,0.4); color: #7a4a2e;
+  font-size: 11px; cursor: pointer; transition: background 0.12s;
+}
+.btn-add-alarm:hover { background: #ffe4b5; }
+
+.days-picker { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.days-label { font-size: 11px; color: #7a4a2e; min-width: 50px; }
+.days-btns { display: flex; gap: 4px; }
+.day-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid #dbb090; background: rgba(255,255,255,0.5);
+  color: #7a4a2e; font-size: 11px; cursor: pointer; transition: all 0.12s;
+}
+.day-btn:hover { background: #ffe4b5; }
+.day-btn.active { background: #dba87a; color: white; border-color: #dba87a; }

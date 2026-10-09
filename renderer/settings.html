@@ -70,7 +70,7 @@
       </div>
     </div>
 
-    <!-- 右侧：AI 设置 -->
+    <!-- 右侧：AI 设置 + 闹钟 -->
     <div class="panel" id="panel-right">
       <div class="panel-title">🤖 AI 接口配置</div>
       <div class="panel-desc">连接 AI API 实现桌面聊天</div>
@@ -105,6 +105,14 @@
     </div>
   </div>
 
+  <!-- ⏰ 闹钟独立区域 -->
+  <div id="alarm-section">
+    <div class="panel-title">⏰ 桌面闹钟 <span id="alarm-count" class="alarm-count-label">0/10</span></div>
+    <div class="panel-desc">最多 10 个闹钟，到点弹出提醒</div>
+    <div id="alarm-list"></div>
+    <button id="btn-add-alarm" class="btn-add-alarm">+ 添加闹钟</button>
+  </div>
+
   <!-- 对话记录独立区域 -->
   <div id="history-section">
     <div class="panel-title">📋 对话记录</div>
@@ -121,6 +129,39 @@
       <div class="modal-buttons">
         <button id="name-cancel" class="modal-btn modal-btn-cancel">取消</button>
         <button id="name-confirm" class="modal-btn modal-btn-confirm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 闹钟编辑弹窗 -->
+  <div id="alarm-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title" id="alarm-modal-title">⏰ 设置闹钟</div>
+      <input id="alarm-time-input" class="modal-input" type="time" value="08:00">
+      <input id="alarm-label-input" class="modal-input" type="text" placeholder="标签（可选）如：起床、午休..." maxlength="30">
+      <select id="alarm-repeat-select" class="modal-input">
+        <option value="once">仅一次</option>
+        <option value="daily" selected>每天</option>
+        <option value="weekday">工作日（周一至周五）</option>
+        <option value="weekend">周末</option>
+        <option value="custom">自定义</option>
+      </select>
+      <div id="alarm-days-picker" class="days-picker hidden">
+        <span class="days-label">重复日：</span>
+        <div class="days-btns">
+          <button class="day-btn" data-d="0">日</button>
+          <button class="day-btn" data-d="1">一</button>
+          <button class="day-btn" data-d="2">二</button>
+          <button class="day-btn" data-d="3">三</button>
+          <button class="day-btn" data-d="4">四</button>
+          <button class="day-btn" data-d="5">五</button>
+          <button class="day-btn" data-d="6">六</button>
+        </div>
+      </div>
+      <input id="alarm-edit-id" type="hidden">
+      <div class="modal-buttons">
+        <button id="alarm-modal-cancel" class="modal-btn modal-btn-cancel">取消</button>
+        <button id="alarm-modal-confirm" class="modal-btn modal-btn-confirm">确定</button>
       </div>
     </div>
   </div>

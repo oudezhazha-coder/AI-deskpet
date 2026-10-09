@@ -119,6 +119,18 @@ body {
 }
 #lock-overlay.visible { display: block; }
 
+/* ===== 闹钟通知 ===== */
+#alarm-notification {
+  position: absolute; top: 36px; left: 50%; transform: translateX(-50%);
+  background: rgba(255,235,59,0.92);
+  color: #5d4037; font-size: 13px; font-weight: 600;
+  padding: 6px 14px; border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  white-space: nowrap; z-index: 100;
+  transition: opacity 0.3s;
+}
+#alarm-notification.hidden { display: none; }
+
 /* ===== 右键菜单 ===== */
 #ctx-menu {
   position: fixed; z-index: 9999;
