@@ -96,7 +96,7 @@ function openSettingsWindow() {
     width: 580, height: 620,
     resizable: true, minWidth: 480, minHeight: 500,
     title: 'AI 桌宠 - 设置',
-    backgroundColor: '#fdf6e3',
+    
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
