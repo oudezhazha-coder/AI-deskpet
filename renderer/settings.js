@@ -1,5 +1,22 @@
 const $ = id => document.getElementById(id);
 
+// ===== Tab 页切换 =====
+const tabItems = document.querySelectorAll('.tab-item');
+const tabPanels = {
+  1: $('tab-panel-1'),
+  2: $('tab-panel-2'),
+  3: $('tab-panel-3'),
+};
+tabItems.forEach(item => {
+  item.addEventListener('click', () => {
+    tabItems.forEach(t => t.classList.remove('active'));
+    item.classList.add('active');
+    Object.values(tabPanels).forEach(p => p?.classList.remove('active'));
+    const panel = tabPanels[parseInt(item.dataset.tab)];
+    if (panel) panel.classList.add('active');
+  });
+});
+
 const previewImg = $('preview-img');
 const previewEmpty = $('preview-empty');
 const sizeSlider = $('size-slider');

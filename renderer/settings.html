@@ -13,112 +13,124 @@
     <span class="subtitle">桌面聊天精灵 · 设置</span>
   </div>
 
-  <div id="content">
-    <!-- 左侧：桌宠目录 + 显示 -->
-    <div class="panel" id="panel-left">
-      <div class="panel-title">📂 桌宠目录</div>
-      <div class="panel-desc">当前使用的桌宠图片</div>
-      <div id="preview-area">
-        <img id="preview-img" src="" alt="预览">
-        <div id="preview-empty">暂无图片</div>
-      </div>
-      <div class="hint" id="pet-selector">
-        <div class="pet-selector-title">
-          🖼️ 桌宠列表
-          <button id="btn-add-pet" class="btn-add-pet">+ 添加</button>
+  <!-- ===== Tab 导航栏 ===== -->
+  <div id="tab-bar">
+    <div class="tab-item active" data-tab="1">🐱 桌宠 &amp; AI</div>
+    <div class="tab-item" data-tab="2">⏰ 闹钟</div>
+    <div class="tab-item" data-tab="3">📋 对话记录</div>
+  </div>
+
+  <!-- ===== Tab 面板 1：桌宠 + AI 设置 ===== -->
+  <div class="tab-panel active" id="tab-panel-1">
+    <div id="content">
+      <div class="panel" id="panel-left">
+        <div class="panel-title">📂 桌宠目录</div>
+        <div class="panel-desc">当前使用的桌宠图片</div>
+        <div id="preview-area">
+          <img id="preview-img" src="" alt="预览">
+          <div id="preview-empty">暂无图片</div>
         </div>
-        <div class="pet-grid" id="pet-grid"></div>
-        <div class="pet-hint">支持 PNG / JPG / GIF / WebP · 以后可放 Live2D 模型</div>
-      </div>
-
-      <div class="panel-title" style="margin-top:16px">📏 桌宠大小</div>
-      <div id="size-row">
-        <input id="size-slider" type="range" min="60" max="160" value="100">
-        <span id="size-val">100%</span>
-      </div>
-
-      <div class="panel-title" style="margin-top:16px">🔒 窗口锁定</div>
-      <div class="panel-desc">解锁后可拖拽移动桌宠位置</div>
-      <button id="btn-lock" class="toggle-btn active">🔒 已锁定</button>
-
-      <div class="panel-title" style="margin-top:16px">🎨 输入栏换色</div>
-      <div class="panel-desc">点击色块选颜色，或点预设一键切换</div>
-      <div class="color-pickers">
-        <div class="cp-row">
-          <label>输入框背景</label>
-          <input type="color" id="cp-input-bg" value="#2a2a3e">
+        <div class="hint" id="pet-selector">
+          <div class="pet-selector-title">
+            🖼️ 桌宠列表
+            <button id="btn-add-pet" class="btn-add-pet">+ 添加</button>
+          </div>
+          <div class="pet-grid" id="pet-grid"></div>
+          <div class="pet-hint">支持 PNG / JPG / GIF / WebP · 以后可放 Live2D 模型</div>
         </div>
-        <div class="cp-row">
-          <label>输入框文字</label>
-          <input type="color" id="cp-input-text" value="#e0d8d0">
-        </div>
-        <div class="cp-row">
-          <label>发送键背景</label>
-          <input type="color" id="cp-send-bg" value="#4fc3f7">
-        </div>
-        <div class="cp-row">
-          <label>发送键文字</label>
-          <input type="color" id="cp-send-text" value="#1a1a2e">
-        </div>
-      </div>
-      <div class="preset-row">
-        <span class="preset-label">预设：</span>
-        <button class="theme-btn" data-theme="default">🔵 默认</button>
-        <button class="theme-btn" data-theme="ocean">💧 海洋</button>
-        <button class="theme-btn" data-theme="warm">🔥 暖阳</button>
-        <button class="theme-btn" data-theme="dark">🌙 暗紫</button>
-      </div>
-    </div>
 
-    <!-- 右侧：AI 设置 + 闹钟 -->
-    <div class="panel" id="panel-right">
-      <div class="panel-title">🤖 AI 接口配置</div>
-      <div class="panel-desc">连接 AI API 实现桌面聊天</div>
+        <div class="panel-title" style="margin-top:16px">📏 桌宠大小</div>
+        <div id="size-row">
+          <input id="size-slider" type="range" min="60" max="160" value="100">
+          <span id="size-val">100%</span>
+        </div>
 
-      <div class="row">
-        <label>🔗 API 地址</label>
-        <input id="ai-url" class="ai-inp" type="text" placeholder="https://api.openai.com/v1">
-      </div>
+        <div class="panel-title" style="margin-top:16px">🔒 窗口锁定</div>
+        <div class="panel-desc">解锁后可拖拽移动桌宠位置</div>
+        <button id="btn-lock" class="toggle-btn active">🔒 已锁定</button>
 
-      <div class="row">
-        <label>🔑 API 密钥</label>
-        <div class="key-row">
-          <input id="ai-key" class="ai-inp" type="password" placeholder="sk-...">
-          <button id="btn-toggle-key" class="btn-sm" title="显示/隐藏">👁️</button>
+        <div class="panel-title" style="margin-top:16px">🎨 输入栏换色</div>
+        <div class="panel-desc">点击色块选颜色，或点预设一键切换</div>
+        <div class="color-pickers">
+          <div class="cp-row">
+            <label>输入框背景</label>
+            <input type="color" id="cp-input-bg" value="#2a2a3e">
+          </div>
+          <div class="cp-row">
+            <label>输入框文字</label>
+            <input type="color" id="cp-input-text" value="#e0d8d0">
+          </div>
+          <div class="cp-row">
+            <label>发送键背景</label>
+            <input type="color" id="cp-send-bg" value="#4fc3f7">
+          </div>
+          <div class="cp-row">
+            <label>发送键文字</label>
+            <input type="color" id="cp-send-text" value="#1a1a2e">
+          </div>
+        </div>
+        <div class="preset-row">
+          <span class="preset-label">预设：</span>
+          <button class="theme-btn" data-theme="default">🔵 默认</button>
+          <button class="theme-btn" data-theme="ocean">💧 海洋</button>
+          <button class="theme-btn" data-theme="warm">🔥 暖阳</button>
+          <button class="theme-btn" data-theme="dark">🌙 暗紫</button>
         </div>
       </div>
 
-      <div class="row">
-        <label>🧠 模型</label>
-        <input id="ai-model" class="ai-inp" type="text" placeholder="gpt-4o-mini">
-      </div>
+      <div class="panel" id="panel-right">
+        <div class="panel-title">🤖 AI 接口配置</div>
+        <div class="panel-desc">连接 AI API 实现桌面聊天</div>
 
-      <div class="row">
-        <label>💬 AI 人设</label>
-        <textarea id="ai-prompt" class="ai-ta" rows="3" placeholder="你是一个可爱的桌面宠物精灵…"></textarea>
-      </div>
+        <div class="row">
+          <label>🔗 API 地址</label>
+          <input id="ai-url" class="ai-inp" type="text" placeholder="https://api.openai.com/v1">
+        </div>
 
-      <div class="row" style="margin-top:4px">
-        <button id="btn-save-ai" class="btn-primary">💾 保存</button>
-        <span id="ai-status" class="status"></span>
+        <div class="row">
+          <label>🔑 API 密钥</label>
+          <div class="key-row">
+            <input id="ai-key" class="ai-inp" type="password" placeholder="sk-...">
+            <button id="btn-toggle-key" class="btn-sm" title="显示/隐藏">👁️</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <label>🧠 模型</label>
+          <input id="ai-model" class="ai-inp" type="text" placeholder="gpt-4o-mini">
+        </div>
+
+        <div class="row">
+          <label>💬 AI 人设</label>
+          <textarea id="ai-prompt" class="ai-ta" rows="3" placeholder="你是一个可爱的桌面宠物精灵…"></textarea>
+        </div>
+
+        <div class="row" style="margin-top:4px">
+          <button id="btn-save-ai" class="btn-primary">💾 保存</button>
+          <span id="ai-status" class="status"></span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ⏰ 闹钟独立区域 -->
-  <div id="alarm-section">
-    <div class="panel-title">⏰ 桌面闹钟 <span id="alarm-count" class="alarm-count-label">0/10</span></div>
-    <div class="panel-desc">最多 10 个闹钟，到点弹出提醒</div>
-    <div id="alarm-list"></div>
-    <button id="btn-add-alarm" class="btn-add-alarm">+ 添加闹钟</button>
+  <!-- ===== Tab 面板 2：闹钟 ===== -->
+  <div class="tab-panel" id="tab-panel-2">
+    <div id="alarm-section">
+      <div class="panel-title">⏰ 桌面闹钟 <span id="alarm-count" class="alarm-count-label">0/10</span></div>
+      <div class="panel-desc">最多 10 个闹钟，到点弹出提醒</div>
+      <div id="alarm-list"></div>
+      <button id="btn-add-alarm" class="btn-add-alarm">+ 添加闹钟</button>
+    </div>
   </div>
 
-  <!-- 对话记录独立区域 -->
-  <div id="history-section">
-    <div class="panel-title">📋 对话记录</div>
-    <div class="panel-desc">最近 10 条与 AI 的对话</div>
-    <div id="settings-history"></div>
-    <button id="btn-refresh-history" style="margin-top:6px;padding:4px 10px;border:1px solid #dbb090;border-radius:6px;background:rgba(255,255,255,0.4);color:#7a4a2e;font-size:11px;cursor:pointer;align-self:flex-start">🔄 刷新</button>
+  <!-- ===== Tab 面板 3：对话记录 ===== -->
+  <div class="tab-panel" id="tab-panel-3">
+    <div id="history-section">
+      <div class="panel-title">📋 对话记录</div>
+      <div class="panel-desc">最近 10 条与 AI 的对话</div>
+      <div id="settings-history"></div>
+      <button id="btn-refresh-history" style="margin-top:6px;padding:4px 10px;border:1px solid #dbb090;border-radius:6px;background:rgba(255,255,255,0.4);color:#7a4a2e;font-size:11px;cursor:pointer;align-self:flex-start">🔄 刷新</button>
+    </div>
   </div>
 
   <!-- 命名弹窗 -->
