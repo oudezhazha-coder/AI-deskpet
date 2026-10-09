@@ -131,6 +131,10 @@ async function sendMessage() {
 
   msgHistory.push({ role: 'user', content: text });
 
+  // 显示"思考中…"
+  bubbleText.textContent = '🤔 思考中…';
+  bubble.classList.remove('hidden');
+
   try {
     const res = await window.petAPI.chat({ messages: msgHistory.slice(-12) });
     if (!res || !res.success) {

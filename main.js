@@ -272,11 +272,14 @@ ipcMain.handle('ai-chat', async (_e, payload) => {
   const cfg = getAIConfig();
   if (!cfg.apiKey) return { success: false, error: '请先配置 API 密钥' };
   if (!cfg.apiUrl) return { success: false, error: '请先配置 API 地址' };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000); // 90s 超时
   try {
     const url = `${cfg.apiUrl.replace(/\/+$/, '')}/chat/completions`;
     const msgList = payload?.messages || [{ role: 'user', content: String(payload) }];
     const res = await fetch(url, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${cfg.apiKey}`,
@@ -287,16 +290,20 @@ ipcMain.handle('ai-chat', async (_e, payload) => {
           { role: 'system', content: cfg.systemPrompt || getDefaultAIConfig().systemPrompt },
           ...msgList,
         ],
-        max_tokens: 500, temperature: 0.8,
+        max_tokens: 1024, temperature: 0.8,
       }),
     });
+    clearTimeout(timeout);
     if (!res.ok) {
       const t = await res.text().catch(() => '');
-      return { success: false, error: `API ${res.status}: ${t.slice(0, 200)}` };
+      const detail = t ? t.slice(0, 200) : res.statusText;
+      return { success: false, error: `API ${res.status}: ${detail}` };
     }
     const data = await res.json();
     return { success: true, reply: (data.choices?.[0]?.message?.content || '').trim() };
   } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') return { success: false, error: '请求超时，请检查网络或换一个更快的模型' };
     return { success: false, error: `请求失败: ${err.message}` };
   }
 });
