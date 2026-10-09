@@ -1,4 +1,4 @@
-* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+﻿* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
 
 html, body {
   width: 100%; height: 100%; overflow: hidden;
@@ -12,12 +12,12 @@ html, body {
   overflow-y: auto;
 }
 
-/* ===== 标题 ===== */
+/* ===== 鏍囬 ===== */
 #header { padding-bottom: 14px; border-bottom: 1px solid rgba(200,150,100,0.25); flex-shrink: 0; }
 #header h1 { font-size: 22px; font-weight: 700; color: #7a4a2e; }
 .subtitle { font-size: 12px; color: #a67c5a; }
 
-/* ===== 内容区 ===== */
+/* ===== 鍐呭鍖?===== */
 #content {
   flex-shrink: 0; display: flex; gap: 20px;
   padding: 12px 0; overflow: hidden;
@@ -39,7 +39,7 @@ html, body {
 }
 .panel-desc { font-size: 11px; color: #a67c5a; margin-bottom: 12px; }
 
-/* ===== 图片预览 ===== */
+/* ===== 鍥剧墖棰勮 ===== */
 #preview-area {
   width: 100%; height: 120px;
   border-radius: 10px; overflow: hidden;
@@ -52,7 +52,7 @@ html, body {
 
 .hint { font-size: 11px; color: #a67c5a; margin-top: 6px; }
 
-/* ===== 桌宠切换 ===== */
+/* ===== 妗屽疇鍒囨崲 ===== */
 #pet-selector { margin-top: 10px; padding-top: 6px; border-top: 1px solid rgba(200,160,120,0.2); }
 .pet-selector-title {
   font-size: 11px; font-weight: 600; color: #7a4a2e; margin-bottom: 6px;
@@ -67,7 +67,7 @@ html, body {
 .btn-add-pet:hover { background: #ffe4b5; }
 .pet-hint { font-size: 10px; color: #b89570; margin-top: 4px; }
 
-/* ===== 命名弹窗 ===== */
+/* ===== 鍛藉悕寮圭獥 ===== */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 9999;
   background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
@@ -115,7 +115,7 @@ html, body {
 .pet-card-name { font-size: 10px; color: #7a4a2e; white-space: nowrap; }
 .hint code { background: rgba(200,160,120,0.15); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
 
-/* ===== 大小 ===== */
+/* ===== 澶у皬 ===== */
 #size-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 #size-slider { flex: 1; -webkit-appearance: none; height: 5px; border-radius: 3px; background: #dbb090; outline: none; }
 #size-slider::-webkit-slider-thumb {
@@ -125,7 +125,7 @@ html, body {
 }
 #size-val { font-size: 13px; font-weight: 600; color: #7a4a2e; min-width: 36px; text-align: right; }
 
-/* ===== 色彩调色盘（统一标签样式）===== */
+/* ===== 鑹插僵璋冭壊鐩橈紙缁熶竴鏍囩鏍峰紡锛?==== */
 .color-pickers { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
 .cp-row { display: flex; align-items: center; gap: 10px; }
 .cp-row label {
@@ -138,7 +138,7 @@ html, body {
 }
 .cp-row input[type="color"]:hover { border-color: #c08050; }
 
-/* ===== 预设按钮 ===== */
+/* ===== 棰勮鎸夐挳 ===== */
 .preset-row {
   display: flex; align-items: center; gap: 5px; margin-top: 10px; flex-wrap: wrap;
 }
@@ -151,7 +151,7 @@ html, body {
 .theme-btn:hover { background: rgba(255,255,255,0.8); border-color: #c08050; }
 .theme-btn.active { background: #ffe4b5; border-color: #dba87a; box-shadow: 0 0 0 1px #dba87a; }
 
-/* ===== 对话记录（独立区域）===== */
+/* ===== 瀵硅瘽璁板綍锛堢嫭绔嬪尯鍩燂級===== */
 #history-section {
   flex-shrink: 0;
   background: rgba(255,248,235,0.65);
@@ -179,7 +179,7 @@ html, body {
 #settings-history .h-user { color: #7a4a2e; }
 #settings-history .h-ai { color: #5a3a22; }
 
-/* ===== 通用按钮 ===== */
+/* ===== 閫氱敤鎸夐挳 ===== */
 .toggle-btn {
   padding: 7px 18px; border: 1px solid #dbb090; border-radius: 8px;
   background: rgba(255,255,255,0.4); color: #7a4a2e;
@@ -189,7 +189,7 @@ html, body {
 .toggle-btn:hover { background: rgba(255,255,255,0.7); border-color: #c08050; }
 .toggle-btn.active { background: #ffe4b5; border-color: #dba87a; }
 
-/* ===== AI 设置 ===== */
+/* ===== AI 璁剧疆 ===== */
 .row { margin-bottom: 12px; }
 .row label { display: block; font-size: 12px; font-weight: 600; color: #7a4a2e; margin-bottom: 5px; }
 
@@ -229,7 +229,7 @@ html, body {
 
 .status { font-size: 11px; color: #a67c5a; margin-left: 8px; }
 
-/* ===== 底部 ===== */
+/* ===== 搴曢儴 ===== */
 #footer {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 0 4px;
@@ -243,7 +243,17 @@ html, body {
 }
 .btn-quit:hover { background: #f5d0c0; border-color: #c08050; }
 
-/* ===== 滚动条 ===== */
+/* ===== 婊氬姩鏉?===== */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #dbb090; border-radius: 3px; }
+.pet-card-wrap { position: relative; }
+.pet-del-btn {
+  position: absolute; top: -4px; right: -4px; width: 18px; height: 18px;
+  border-radius: 50%; border: 1px solid #e57373;
+  background: #ffebee; color: #c62828; font-size: 11px; line-height: 1;
+  cursor: pointer; display: none; align-items: center; justify-content: center;
+  z-index: 2; padding: 0;
+}
+.pet-card-wrap:hover .pet-del-btn { display: flex; }
+.pet-del-btn:hover { background: #ffcdd2; }

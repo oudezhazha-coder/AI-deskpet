@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -243,6 +243,23 @@ ipcMain.handle('pick-and-add-pet', async (_e, petName) => {
   }
 
   return { success: true, petName: finalName, copied };
+});
+
+// 删除桌宠
+ipcMain.handle('delete-pet', (_e, petName) => {
+  if (!petName || petName === 'pet-default') {
+    return { success: false, error: '不能删除默认桌宠' };
+  }
+  const dir = petFolderPath(petName);
+  if (!fs.existsSync(dir)) return { success: false, error: '桌宠不存在' };
+  fs.rmSync(dir, { recursive: true, force: true });
+  const cfg = getConfig();
+  if (cfg.pet === petName) {
+    cfg.pet = 'pet-default';
+    saveConfig(cfg);
+    if (petWin && !petWin.isDestroyed()) petWin.webContents.send('config-changed', { pet: 'pet-default' });
+  }
+  return { success: true };
 });
 
 // AI

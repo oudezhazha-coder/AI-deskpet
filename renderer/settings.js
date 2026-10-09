@@ -149,6 +149,8 @@ async function loadPetList() {
   const list = await window.petAPI.getPetList();
   petGrid.innerHTML = '';
   await Promise.all(list.map(async name => {
+    const wrap = document.createElement('div');
+    wrap.className = 'pet-card-wrap';
     const card = document.createElement('div');
     card.className = 'pet-card' + (name === currentPet ? ' active' : '');
     const img = document.createElement('img');
@@ -159,7 +161,7 @@ async function loadPetList() {
     const label = document.createElement('span');
     label.className = 'pet-card-name';
     let dName = name;
-    if (name === 'pet-default') dName = '🐱 默认';
+    if (name === 'pet-default') dName = '🐱 预设';
     else dName = dName.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     label.textContent = dName;
     card.appendChild(img);
@@ -177,7 +179,30 @@ async function loadPetList() {
         previewEmpty.style.display = 'none';
       }
     });
-    petGrid.appendChild(card);
+    // 删除按钮（默认桌宠不可删）
+    if (name !== 'pet-default') {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'pet-del-btn';
+      delBtn.textContent = '\u00d7';
+      delBtn.title = '删除此桌宠';
+      delBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!confirm('确定删除桌宠 "' + dName + '"？文件夹和图片都会被删除。')) return;
+        const res = await window.petAPI.deletePet(name);
+        if (res.success) {
+          if (name === currentPet) {
+            currentPet = 'pet-default';
+            loadPreview();
+          }
+          loadPetList();
+        } else {
+          alert('删除失败: ' + res.error);
+        }
+      });
+      wrap.appendChild(delBtn);
+    }
+    wrap.appendChild(card);
+    petGrid.appendChild(wrap);
   }));
 }
 
