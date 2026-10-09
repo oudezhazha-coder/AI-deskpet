@@ -121,15 +121,28 @@ body {
 
 /* ===== 闹钟通知 ===== */
 #alarm-notification {
-  position: absolute; top: 36px; left: 50%; transform: translateX(-50%);
-  background: rgba(255,235,59,0.92);
-  color: #5d4037; font-size: 13px; font-weight: 600;
-  padding: 6px 14px; border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  white-space: nowrap; z-index: 100;
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #ff6f00, #ffab00);
+  color: white; font-size: 13px; font-weight: 700;
+  padding: 8px 16px; border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(255,111,0,0.4);
+  white-space: nowrap; z-index: 100; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  animation: alarm-pulse 1s ease-in-out infinite alternate;
   transition: opacity 0.3s;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 #alarm-notification.hidden { display: none; }
+#alarm-notif-text { flex: 1; }
+#alarm-notif-close {
+  font-size: 14px; opacity: 0.7; cursor: pointer; line-height: 1;
+}
+#alarm-notif-close:hover { opacity: 1; }
+
+@keyframes alarm-pulse {
+  0% { transform: translateX(-50%) scale(1); box-shadow: 0 4px 20px rgba(255,111,0,0.4); }
+  100% { transform: translateX(-50%) scale(1.05); box-shadow: 0 6px 30px rgba(255,111,0,0.6); }
+}
 
 /* ===== 右键菜单 ===== */
 #ctx-menu {

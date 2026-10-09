@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -360,17 +360,24 @@ function checkAlarms() {
   const now = new Date();
   const h = now.getHours(), m = now.getMinutes();
   const today = now.getDay();
+  const date = now.getDate();
   const timeStr = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
   for (const a of alarms) {
     if (!a.enabled) continue;
     if (a.hour !== h || a.minute !== m) continue;
-    if (a._lastTriggered === timeStr + String(now.getDate())) continue;
+    if (a._lastTriggered === timeStr + String(date)) continue;
     const shouldRing = a.repeat === 'daily' || a.repeat === 'once'
       || (a.repeat === 'weekday' && today >= 1 && today <= 5)
       || (a.repeat === 'weekend' && (today === 0 || today === 6))
       || (a.repeat === 'custom' && a.days && a.days.includes(today));
     if (!shouldRing) continue;
-    a._lastTriggered = timeStr + String(now.getDate());
+    a._lastTriggered = timeStr + String(date);
+    
+    // 系统通知
+    try {
+      const notif = new Notification({ title: '⏰ ' + a.label || '闹钟', body: timeStr + ' 到点了！' });
+      setTimeout(() => notif.close(), 8000);
+    } catch(e) { /* 不支持系统通知就算了 */ }
     if (petWin && !petWin.isDestroyed()) {
       petWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr });
     }
@@ -385,7 +392,7 @@ function checkAlarms() {
 }
 function startAlarmTimer() {
   if (alarmTimer) return;
-  alarmTimer = setInterval(checkAlarms, 30000);
+  alarmTimer = setInterval(checkAlarms, 5000);
   setTimeout(checkAlarms, 1000);
 }
 

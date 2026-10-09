@@ -430,15 +430,11 @@ document.getElementById('alarm-modal-cancel').addEventListener('click', () => {
   alarmModal.classList.add('hidden');
 });
 
-// 接收闹钟提醒（桌宠窗口会显示通知）
+// 接收闹钟提醒 - 刷新列表（比如仅一次的自动禁用后更新界面）
 if (window.petAPI.onAlarmRing) {
   window.petAPI.onAlarmRing(data => {
-    const msg = '\u23f0 ' + data.label + ' - ' + data.time;
-    console.log('[alarm]', msg);
-    // 如果有通知 API 就用它
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('\u23f0 ' + data.label, { body: data.time + ' 到点了！' });
-    }
+    console.log('[alarm]', data.label, data.time);
+    loadAlarms();
   });
 }
 
