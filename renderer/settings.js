@@ -328,6 +328,7 @@ const alarmRepeatSelect = document.getElementById('alarm-repeat-select');
 const alarmDaysPicker = document.getElementById('alarm-days-picker');
 const alarmEditId = document.getElementById('alarm-edit-id');
 const alarmModalTitle = document.getElementById('alarm-modal-title');
+const alarmRingtoneSelect = document.getElementById('alarm-ringtone-select');
 
 const REPEAT_LABELS = {
   once: '仅一次', daily: '每天', weekday: '工作日',
@@ -413,6 +414,7 @@ btnAddAlarm.addEventListener('click', () => {
   alarmTimeInput.value = '08:00';
   alarmLabelInput.value = '';
   alarmRepeatSelect.value = 'daily';
+  alarmRingtoneSelect.value = 'default';
   alarmDaysPicker.classList.add('hidden');
   selectedDays = [];
   dayBtns.forEach(b => b.classList.remove('active'));
@@ -434,6 +436,7 @@ document.getElementById('alarm-modal-confirm').addEventListener('click', async (
     label: alarmLabelInput.value.trim(),
     repeat: repeat,
     enabled: true,
+    ringtone: alarmRingtoneSelect.value,
   };
   if (repeat === 'custom') {
     alarm.days = [...selectedDays];

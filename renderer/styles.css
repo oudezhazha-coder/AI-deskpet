@@ -201,3 +201,25 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
+/* ===== 闹钟关闭按钮 ===== */
+#alarm-close-btn {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 9999;
+  width: calc(100% - 16px);
+  text-align: center;
+  -webkit-app-region: no-drag;
+  transition: opacity 0.3s ease;
+}
+#alarm-close-btn.hidden { display: none; }
+#btn-stop-alarm {
+  padding: 6px 24px;
+  border: none; border-radius: 8px;
+  background: #ff6b6b; color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 3px 12px rgba(255,107,107,0.4);
+  transition: background 0.15s;
+  -webkit-app-region: no-drag;
+}
+#btn-stop-alarm:hover { background: #e05555; }
+

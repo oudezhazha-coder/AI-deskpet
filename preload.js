@@ -24,10 +24,19 @@ contextBridge.exposeInMainWorld('petAPI', {
   toggleAlarm: (id, enabled) => ipcRenderer.invoke('toggle-alarm', id, enabled),
   saveAlarms: (alarms) => ipcRenderer.invoke('save-alarms', alarms),
 
+  getRingtones: () => ipcRenderer.invoke('get-ringtones'),
+  stopAlarmSound: () => ipcRenderer.invoke('stop-alarm-sound'),
+
   onAlarmRing: (cb) => {
     const h = (_e, data) => cb(data);
     ipcRenderer.on('alarm-ring', h);
     return () => ipcRenderer.removeListener('alarm-ring', h);
+  },
+
+  onAlarmStopSound: (cb) => {
+    const h = () => cb();
+    ipcRenderer.on('alarm-stop-sound', h);
+    return () => ipcRenderer.removeListener('alarm-stop-sound', h);
   },
 
   onConfigChanged: (cb) => {

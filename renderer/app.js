@@ -16,11 +16,14 @@ const historyPanel = document.getElementById('history-panel');
 const historyList = document.getElementById('history-list');
 const historyClose = document.getElementById('history-close');
 const chatMenu = document.getElementById('chat-menu');
+const alarmCloseBtn = document.getElementById('alarm-close-btn');
+const btnStopAlarm = document.getElementById('btn-stop-alarm');
 
 let cfg = { size: 100, locked: true, anim: 'normal' };
 let chatting = false;
 let bubbleTimer = null;
 let msgHistory = [];
+let alarmAudio = null;
 
 // ===== 工具 =====
 function escapeHtml(t) {
@@ -278,10 +281,23 @@ window.petAPI.onConfigChanged(c => {
 });
 
 // ===== 闹钟提醒 =====
+function stopAlarmSound() {
+  if (alarmAudio) {
+    alarmAudio.pause();
+    alarmAudio.currentTime = 0;
+    alarmAudio = null;
+  }
+  alarmCloseBtn.classList.add('hidden');
+}
+btnStopAlarm.addEventListener('click', () => {
+  stopAlarmSound();
+  window.petAPI.stopAlarmSound();
+});
+
 window.petAPI.onAlarmRing(data => {
   const timeStr = data.time || '';
   const label = data.label || '闹钟';
-  bubbleText.textContent = '\u23f0 ' + label + ' - ' + timeStr + ' 到点了\uff01';
+  bubbleText.textContent = label + ' - ' + timeStr + ' 到点了！';
   bubble.classList.remove('hidden');
   petImg.classList.remove('bounce-alarm');
   void petImg.offsetWidth;
@@ -291,6 +307,21 @@ window.petAPI.onAlarmRing(data => {
     bubble.classList.add('hidden');
     bubbleTimer = null;
   }, 30000);
+
+  // 播放铃声
+  if (!alarmAudio && data.ringtoneData) {
+    alarmAudio = new Audio(data.ringtoneData);
+    alarmAudio.play().catch(e => console.warn('[alarm] 播放失败:', e.message));
+    alarmAudio.addEventListener('ended', () => {
+      alarmCloseBtn.classList.add('hidden');
+      alarmAudio = null;
+    });
+    alarmCloseBtn.classList.remove('hidden');
+  }
+});
+
+window.petAPI.onAlarmStopSound(() => {
+  stopAlarmSound();
 });
 
 // ===== 启动 =====

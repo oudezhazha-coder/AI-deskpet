@@ -355,6 +355,39 @@ ipcMain.handle('append-chat-history', (_e, entry) => {
 // ===== 闹钟 =====
 const alarmsPath = path.join(userDataPath, 'alarms.json');
 let alarmTimer = null;
+
+// 默认铃声
+const DEFAULT_RINGTONE = 'D:\\新建文件夹 (2)\\SWIN - 只因你太美.mp3';
+let ringtoneCache = null; // base64 data URL
+
+function getRingtoneDataUrl() {
+  if (ringtoneCache) return ringtoneCache;
+  try {
+    if (!fs.existsSync(DEFAULT_RINGTONE)) return null;
+    const buf = fs.readFileSync(DEFAULT_RINGTONE);
+    const b64 = buf.toString('base64');
+    ringtoneCache = 'data:audio/mpeg;base64,' + b64;
+    return ringtoneCache;
+  } catch (e) {
+    console.error('[alarm] 铃声读取失败:', e.message);
+    return null;
+  }
+}
+
+ipcMain.handle('get-ringtones', () => {
+  return [
+    { id: 'default', name: '默认铃声' },
+    { id: 'silent', name: '静音' },
+  ];
+});
+
+ipcMain.handle('stop-alarm-sound', () => {
+  // 通知所有窗口停止播放
+  if (petWin && !petWin.isDestroyed()) {
+    petWin.webContents.send('alarm-stop-sound');
+  }
+  return { success: true };
+});
 function getAlarms() {
   return readJSON(alarmsPath, []);
 }
@@ -385,11 +418,13 @@ function checkAlarms() {
       const notif = new Notification({ title: '⏰ ' + a.label || '闹钟', body: timeStr + ' 到点了！' });
       setTimeout(() => notif.close(), 8000);
     } catch(e) { /* 不支持系统通知就算了 */ }
+    const ringtoneId = a.ringtone || 'default';
+    const ringtoneData = ringtoneId === 'silent' ? null : getRingtoneDataUrl();
     if (petWin && !petWin.isDestroyed()) {
-      petWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr });
+      petWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr, ringtoneData });
     }
     if (settingsWin && !settingsWin.isDestroyed()) {
-      settingsWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr });
+      settingsWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr, ringtoneData });
     }
     if (a.repeat === 'once') {
       a.enabled = false;
