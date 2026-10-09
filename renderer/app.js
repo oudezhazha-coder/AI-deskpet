@@ -70,6 +70,7 @@ async function loadImage() {
 // ===== 配置 =====
 async function loadConfig() {
   cfg = await window.petAPI.getConfig();
+  if (cfg.anim === undefined) cfg.anim = 'normal';
   lockOverlay.classList.toggle('visible', cfg.locked !== false);
   updateLockLabel();
   ctxItems.forEach(el => el.classList.toggle('active', el.dataset.anim === (cfg.anim || 'normal')));
@@ -269,6 +270,7 @@ window.petAPI.onConfigChanged(c => {
   ctxItems.forEach(el => el.classList.toggle('active', el.dataset.anim === (cfg.anim || 'normal')));
   if (c.size) applySize(c.size);
   if (c.colors) applyTheme(c.colors);
+  if (c.pet) loadImage();
 });
 
 // ===== 启动 =====

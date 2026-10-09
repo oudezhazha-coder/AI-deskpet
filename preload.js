@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('petAPI', {
   getHistory: () => ipcRenderer.invoke('get-chat-history'),
   appendHistory: (entry) => ipcRenderer.invoke('append-chat-history', entry),
 
+  getPetList: () => ipcRenderer.invoke('get-pet-list'),
+  pickAndAddPet: (name) => ipcRenderer.invoke('pick-and-add-pet', name),
+
   onConfigChanged: (cb) => {
     const h = (_e, c) => cb(c);
     ipcRenderer.on('config-changed', h);

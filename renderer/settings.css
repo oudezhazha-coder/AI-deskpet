@@ -51,6 +51,68 @@ html, body {
 #preview-empty { font-size: 12px; color: #a67c5a; }
 
 .hint { font-size: 11px; color: #a67c5a; margin-top: 6px; }
+
+/* ===== 桌宠切换 ===== */
+#pet-selector { margin-top: 10px; padding-top: 6px; border-top: 1px solid rgba(200,160,120,0.2); }
+.pet-selector-title {
+  font-size: 11px; font-weight: 600; color: #7a4a2e; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-add-pet {
+  font-size: 10px; padding: 2px 8px; border-radius: 6px;
+  border: 1px solid #dba87a; background: rgba(255,255,255,0.5);
+  color: #7a4a2e; cursor: pointer;
+  transition: background 0.12s;
+}
+.btn-add-pet:hover { background: #ffe4b5; }
+.pet-hint { font-size: 10px; color: #b89570; margin-top: 4px; }
+
+/* ===== 命名弹窗 ===== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-overlay.hidden { display: none; }
+.modal-box {
+  background: #faf3ea; border-radius: 14px; padding: 24px 28px 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2); width: 300px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.modal-title { font-size: 14px; font-weight: 600; color: #7a4a2e; }
+.modal-input {
+  font-size: 14px; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid #dbb090; background: white; color: #3e2723;
+  outline: none;
+}
+.modal-input:focus { border-color: #dba87a; box-shadow: 0 0 0 2px rgba(219,168,122,0.25); }
+.modal-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-btn {
+  font-size: 12px; padding: 6px 16px; border-radius: 8px;
+  border: 1px solid #dbb090; cursor: pointer; transition: background 0.12s;
+}
+.modal-btn-cancel { background: rgba(255,255,255,0.5); color: #7a4a2e; }
+.modal-btn-cancel:hover { background: rgba(255,255,255,0.8); }
+.modal-btn-confirm { background: #dba87a; color: white; border-color: #dba87a; }
+.modal-btn-confirm:hover { background: #c9956a; }
+.pet-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  max-height: 120px; overflow-y: auto;
+}
+.pet-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 6px 8px 4px;
+  border-radius: 8px; border: 2px solid transparent;
+  background: rgba(255,255,255,0.25); cursor: pointer;
+  transition: all 0.15s;
+}
+.pet-card:hover { background: rgba(255,255,255,0.45); }
+.pet-card.active { border-color: #dba87a; background: rgba(255,228,181,0.4); }
+.pet-card-img {
+  width: 48px; height: 48px; border-radius: 6px;
+  object-fit: contain; background: rgba(200,160,120,0.1);
+}
+.pet-card-name { font-size: 10px; color: #7a4a2e; white-space: nowrap; }
 .hint code { background: rgba(200,160,120,0.15); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
 
 /* ===== 大小 ===== */

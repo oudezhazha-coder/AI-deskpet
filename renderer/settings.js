@@ -93,28 +93,21 @@ btnLock.addEventListener('click', async () => {
 async function loadColors() {
   const cfg = await window.petAPI.getConfig();
   const colors = cfg.colors;
-  if (colors) {
-    setColorPickers(colors);
-  }
-  // 高亮对应的预设
+  if (colors) setColorPickers(colors);
   const theme = cfg.theme || 'default';
   themeBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
 }
 
-// 每个颜色选择器变化时立即发送
 colorPickers.forEach(p => {
   p.addEventListener('input', () => {
-    const colors = getColorPickers();
-    sendColors(colors);
+    sendColors(getColorPickers());
     themeBtns.forEach(b => b.classList.remove('active'));
   });
 });
 
-// 预设按钮
 themeBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    const theme = btn.dataset.theme;
-    const colors = themes[theme] || themes.default;
+    const colors = themes[btn.dataset.theme] || themes.default;
     setColorPickers(colors);
     sendColors(colors);
     themeBtns.forEach(b => b.classList.remove('active'));
@@ -146,13 +139,96 @@ btnToggleKey.addEventListener('click', () => {
   aiKey.type = aiKey.type === 'password' ? 'text' : 'password';
 });
 
+// ===== 桌宠切换 =====
+const petGrid = document.getElementById('pet-grid');
+let currentPet = null;
+
+async function loadPetList() {
+  const cfg = await window.petAPI.getConfig();
+  currentPet = cfg.pet || 'pet-default';
+  const list = await window.petAPI.getPetList();
+  petGrid.innerHTML = '';
+  await Promise.all(list.map(async name => {
+    const card = document.createElement('div');
+    card.className = 'pet-card' + (name === currentPet ? ' active' : '');
+    const img = document.createElement('img');
+    img.className = 'pet-card-img';
+    const data = await window.petAPI.getImage(name);
+    img.src = data || '';
+    img.alt = name;
+    const label = document.createElement('span');
+    label.className = 'pet-card-name';
+    let dName = name;
+    if (name === 'pet-default') dName = '🐱 默认';
+    else dName = dName.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    label.textContent = dName;
+    card.appendChild(img);
+    card.appendChild(label);
+    card.addEventListener('click', async () => {
+      if (name === currentPet) return;
+      await window.petAPI.setConfig({ pet: name });
+      document.querySelectorAll('.pet-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      currentPet = name;
+      const preview = await window.petAPI.getImage(name);
+      if (preview) {
+        previewImg.src = preview;
+        previewImg.style.display = 'block';
+        previewEmpty.style.display = 'none';
+      }
+    });
+    petGrid.appendChild(card);
+  }));
+}
+
+// ===== 命名弹窗（替代被禁用的 prompt()）=====
+const nameModal = $('name-modal');
+const nameInput = $('name-input');
+const nameConfirm = $('name-confirm');
+const nameCancel = $('name-cancel');
+let nameResolve = null;
+
+function showNameDialog() {
+  nameModal.classList.remove('hidden');
+  nameInput.value = '';
+  setTimeout(() => nameInput.focus(), 50);
+  return new Promise(resolve => { nameResolve = resolve; });
+}
+nameConfirm.addEventListener('click', () => {
+  const val = nameInput.value.trim();
+  nameModal.classList.add('hidden');
+  if (nameResolve) nameResolve(val || null);
+});
+nameCancel.addEventListener('click', () => {
+  nameModal.classList.add('hidden');
+  if (nameResolve) nameResolve(null);
+});
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') nameConfirm.click();
+  if (e.key === 'Escape') nameCancel.click();
+});
+
+// 添加桌宠按钮
+document.getElementById('btn-add-pet')?.addEventListener('click', async () => {
+  const name = await showNameDialog();
+  if (!name) return;
+  const res = await window.petAPI.pickAndAddPet(name);
+  if (res.success) {
+    await loadPetList();
+    const newCfg = await window.petAPI.getConfig();
+    currentPet = newCfg.pet || 'pet-default';
+  } else if (res.error !== '已取消') {
+    alert('添加失败: ' + res.error);
+  }
+});
+
 // ===== 退出 =====
 btnQuit.addEventListener('click', () => {
   if (confirm('确定退出？')) window.petAPI.quitApp();
 });
 
 // ===== 对话记录 =====
-const settingsHistory = document.getElementById('settings-history');
+const settingsHistory = $('settings-history');
 async function loadSettingsHistory() {
   try {
     console.log('[settings] loadSettingsHistory called');
@@ -160,7 +236,7 @@ async function loadSettingsHistory() {
     console.log('[settings] getHistory returned:', JSON.stringify(history).slice(0, 500));
     settingsHistory.innerHTML = '';
     if (!history || history.length === 0) {
-      settingsHistory.innerHTML = '<div style="padding:8px;background:#fff3e0;border-radius:6px;font-size:11px;color:#7a4a2e">⚠️ 历史为空（getHistory 返回 ' + JSON.stringify(history) + '）</div>';
+      settingsHistory.innerHTML = '<div style="padding:8px;background:#fff3e0;border-radius:6px;font-size:11px;color:#7a4a2e">⚠️ 历史为空</div>';
       return;
     }
     settingsHistory.innerHTML = `<div style="font-size:10px;color:#a67c5a;text-align:center;padding:2px 0">共 ${history.length} 条</div>`;
@@ -195,6 +271,6 @@ loadLock();
 loadColors();
 loadAI();
 loadSettingsHistory();
+loadPetList();
 
-// 刷新对话记录按钮
 document.getElementById('btn-refresh-history')?.addEventListener('click', loadSettingsHistory);

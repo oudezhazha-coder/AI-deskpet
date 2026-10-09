@@ -26,7 +26,7 @@ function writeJSON(p, data) {
 
 // ===== 桌宠配置 =====
 function getConfig() {
-  return readJSON(configPath, { size: 100, locked: true });
+  return readJSON(configPath, { size: 100, locked: true, anim: 'normal', pet: 'pet-default' });
 }
 function saveConfig(cfg) {
   writeJSON(configPath, cfg);
@@ -146,6 +146,7 @@ ipcMain.handle('set-config', (_e, cfg) => {
   if (cfg.locked !== undefined) c.locked = cfg.locked;
   if (cfg.theme !== undefined) c.theme = cfg.theme;
   if (cfg.colors !== undefined) c.colors = cfg.colors;
+  if (cfg.pet !== undefined) c.pet = cfg.pet;
   saveConfig(c);
   if (petWin && !petWin.isDestroyed()) petWin.webContents.send('config-changed', c);
   if (cfg.size && petWin && !petWin.isDestroyed()) {
@@ -155,12 +156,93 @@ ipcMain.handle('set-config', (_e, cfg) => {
   return { success: true };
 });
 
-// 图片
-ipcMain.handle('get-image', () => {
-  const imgPath = path.join(__dirname, 'resources', 'pet-default.png');
-  if (!fs.existsSync(imgPath)) return null;
-  const data = fs.readFileSync(imgPath);
-  return `data:image/png;base64,${data.toString('base64')}`;
+// ===== 桌宠图片工具 =====
+const IMG_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+function petFolderPath(name) {
+  return path.join(__dirname, 'resources', 'pets', name);
+}
+/** 返回桌宠文件夹里第一张找到的图片路径 */
+function findFirstImage(dir) {
+  if (!fs.existsSync(dir)) return null;
+  const files = fs.readdirSync(dir);
+  for (const f of files) {
+    if (IMG_EXTS.includes(path.extname(f).toLowerCase())) {
+      return path.join(dir, f);
+    }
+  }
+  return null;
+}
+/** 桌宠文件夹里所有图片文件名 */
+function listImages(dir) {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter(f => IMG_EXTS.includes(path.extname(f).toLowerCase()));
+}
+
+// 图片（支持指定桌宠，自动找第一张可用图）
+ipcMain.handle('get-image', (_e, petName) => {
+  const cfg = getConfig();
+  const name = petName || cfg.pet || 'pet-default';
+  const imgPath = findFirstImage(petFolderPath(name));
+  if (imgPath) {
+    const data = fs.readFileSync(imgPath);
+    return `data:image/${path.extname(imgPath).slice(1)};base64,${data.toString('base64')}`;
+  }
+  // 向后兼容
+  const oldPath = path.join(__dirname, 'resources', 'pet-default.png');
+  if (fs.existsSync(oldPath)) {
+    const data = fs.readFileSync(oldPath);
+    return `data:image/png;base64,${data.toString('base64')}`;
+  }
+  return null;
+});
+
+// 列出可用桌宠（文件夹里有图片就算）
+ipcMain.handle('get-pet-list', () => {
+  const petsDir = path.join(__dirname, 'resources', 'pets');
+  if (!fs.existsSync(petsDir)) return [];
+  return fs.readdirSync(petsDir).filter(name => {
+    return listImages(path.join(petsDir, name)).length > 0;
+  });
+});
+
+// 添加桌宠（用户命名后选多图 → 建文件夹 → 全部复制）
+ipcMain.handle('pick-and-add-pet', async (_e, petName) => {
+  if (!petName || !petName.trim()) return { success: false, error: '名称不能为空' };
+  const safeName = petName.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff_-]/g, '').replace(/\s+/g, '-');
+  if (!safeName) return { success: false, error: '名称无效，请用中文、英文或数字' };
+
+  const win = settingsWin && !settingsWin.isDestroyed() ? settingsWin : undefined;
+  const result = await dialog.showOpenDialog(win, {
+    title: `选择 ${petName} 的图片（可多选）`,
+    filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+    properties: ['openFile', 'multiSelections'],
+  });
+  if (result.canceled || !result.filePaths.length) return { success: false, error: '已取消' };
+
+  const petsDir = path.join(__dirname, 'resources', 'pets');
+  if (!fs.existsSync(petsDir)) fs.mkdirSync(petsDir, { recursive: true });
+
+  // 重名加序号
+  let finalName = safeName;
+  let counter = 1;
+  while (fs.existsSync(path.join(petsDir, finalName))) {
+    finalName = `${safeName}-${counter}`;
+    counter++;
+  }
+
+  const destDir = path.join(petsDir, finalName);
+  fs.mkdirSync(destDir, { recursive: true });
+
+  let copied = 0;
+  for (const srcPath of result.filePaths) {
+    const ext = path.extname(srcPath).toLowerCase();
+    if (!IMG_EXTS.includes(ext)) continue;
+    const basename = path.basename(srcPath);
+    fs.copyFileSync(srcPath, path.join(destDir, basename));
+    copied++;
+  }
+
+  return { success: true, petName: finalName, copied };
 });
 
 // AI
