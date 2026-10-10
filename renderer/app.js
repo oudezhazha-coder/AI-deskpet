@@ -325,7 +325,10 @@ window.petAPI.onAlarmStopSound(() => {
 });
 
 // ===== 启动天气问候 =====
-window.petAPI.onAIGreeting(text => {
+// main 进程发来的主动消息：{ text, type: 'greeting' | 'proactive' }（兼容旧格式纯字符串）
+window.petAPI.onAIGreeting(payload => {
+  const text = typeof payload === 'string' ? payload : (payload && payload.text) || '';
+  if (!text) return;
   bubbleText.textContent = text;
   bubble.classList.remove('hidden');
   bouncePet();
@@ -334,6 +337,15 @@ window.petAPI.onAIGreeting(text => {
     bubble.classList.add('hidden');
     bubbleTimer = null;
   }, 30000);
+
+  // 进 AI 上下文：用户紧接着回复时，AI 记得自己刚说过这句
+  msgHistory.push({ role: 'assistant', content: text });
+  // 持久化到对话记录（标记为桌宠主动消息）
+  window.petAPI.appendHistory({
+    user: '（桌宠主动消息）',
+    ai: text,
+    time: new Date().toISOString(),
+  });
 });
 
 // 主进程请求坐标时：用系统定位获取经纬度

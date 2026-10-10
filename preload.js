@@ -42,7 +42,7 @@ contextBridge.exposeInMainWorld('petAPI', {
   },
 
   onAIGreeting: (cb) => {
-    const h = (_e, text) => cb(text);
+    const h = (_e, payload) => cb(payload);
     ipcRenderer.on('ai-greeting', h);
     return () => ipcRenderer.removeListener('ai-greeting', h);
   },

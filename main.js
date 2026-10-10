@@ -440,7 +440,7 @@ async function sendGreeting(weather) {
   console.log('[问候]', text);
   setTimeout(() => {
     if (petWin && !petWin.isDestroyed()) {
-      petWin.webContents.send('ai-greeting', text);
+      petWin.webContents.send('ai-greeting', { text, type: 'greeting' });
     }
   }, 1000);
 }
@@ -553,7 +553,7 @@ async function sendProactiveChat() {
     if (res.success && res.reply) {
       console.log('[主动搭话]', res.reply);
       setTimeout(() => {
-        if (petWin && !petWin.isDestroyed()) petWin.webContents.send('ai-greeting', res.reply);
+        if (petWin && !petWin.isDestroyed()) petWin.webContents.send('ai-greeting', { text: res.reply, type: 'proactive' });
       }, 300);
     } else {
       console.log('[主动搭话失败]', res.error);
