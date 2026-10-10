@@ -76,7 +76,7 @@ function createPetWindow() {
   petWin = new BrowserWindow({
     width: 260, height: 380,
     frame: false, transparent: true,
-    resizable: true, alwaysOnTop: true, skipTaskbar: false, hasShadow: false,
+    resizable: true, alwaysOnTop: true, skipTaskbar: true, hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
