@@ -205,10 +205,19 @@ async function showHistoryPanel() {
       const ts = t.toLocaleString('zh-CN', {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
       });
-      item.innerHTML =
-        '<div class="history-time">' + ts + '</div>' +
-        '<div class="history-msg"><b>你:</b> ' + escapeHtml(entry.user) + '</div>' +
-        '<div class="history-msg"><b>AI:</b> ' + escapeHtml(entry.ai) + '</div>';
+      if (entry.user === '（桌宠主动消息）') {
+        // 桌宠主动消息（启动问候 / 主动搭话）特殊渲染
+        const tag = entry.type === 'greeting' ? '✨ 启动问候' :
+                    (entry.type === 'proactive' ? '✨ 桌宠搭话' : '✨ 桌宠主动消息');
+        item.innerHTML =
+          '<div class="history-time">' + ts + '</div>' +
+          '<div class="history-msg history-proactive"><b>' + tag + ':</b> ' + escapeHtml(entry.ai) + '</div>';
+      } else {
+        item.innerHTML =
+          '<div class="history-time">' + ts + '</div>' +
+          '<div class="history-msg"><b>你:</b> ' + escapeHtml(entry.user) + '</div>' +
+          '<div class="history-msg"><b>AI:</b> ' + escapeHtml(entry.ai) + '</div>';
+      }
       historyList.appendChild(item);
     });
   }
@@ -344,6 +353,7 @@ window.petAPI.onAIGreeting(payload => {
   window.petAPI.appendHistory({
     user: '（桌宠主动消息）',
     ai: text,
+    type: typeof payload === 'string' ? 'message' : (payload.type || 'message'),
     time: new Date().toISOString(),
   });
 });
