@@ -120,6 +120,11 @@
       <div class="panel-desc">最多 10 个闹钟，到点弹出提醒</div>
       <div id="alarm-list"></div>
       <button id="btn-add-alarm" class="btn-add-alarm">+ 添加闹钟</button>
+
+      <div class="panel-title" style="margin-top:16px">🔔 闹钟铃声 <span id="ringtone-count" class="alarm-count-label">0/10</span></div>
+      <div class="panel-desc">可添加自己的音乐，上限 10 个 · 右键自定义铃声可删除</div>
+      <div id="ringtone-list"></div>
+      <button id="btn-add-ringtone" class="btn-add-alarm">+ 添加铃声</button>
     </div>
   </div>
 
@@ -172,10 +177,7 @@
       </div>
       <div class="form-row">
         <label class="form-label">铃声</label>
-        <select id="alarm-ringtone-select" class="modal-input">
-          <option value="default">默认铃声</option>
-          <option value="silent">静音</option>
-        </select>
+        <select id="alarm-ringtone-select" class="modal-input"></select>
       </div>
       <input id="alarm-edit-id" type="hidden">
       <div class="modal-buttons">

@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('petAPI', {
   saveAlarms: (alarms) => ipcRenderer.invoke('save-alarms', alarms),
 
   getRingtones: () => ipcRenderer.invoke('get-ringtones'),
+  pickAndAddRingtone: () => ipcRenderer.invoke('pick-and-add-ringtone'),
+  deleteRingtone: (id) => ipcRenderer.invoke('delete-ringtone', id),
   stopAlarmSound: () => ipcRenderer.invoke('stop-alarm-sound'),
 
   onAlarmRing: (cb) => {

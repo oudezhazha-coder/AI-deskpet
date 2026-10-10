@@ -356,18 +356,39 @@ ipcMain.handle('append-chat-history', (_e, entry) => {
 const alarmsPath = path.join(userDataPath, 'alarms.json');
 let alarmTimer = null;
 
-// 默认铃声
+// 铃声
 const DEFAULT_RINGTONE = 'D:\\新建文件夹 (2)\\SWIN - 只因你太美.mp3';
-let ringtoneCache = null; // base64 data URL
+const ringtonesDir = path.join(userDataPath, 'ringtones');
+const ringtonesMetaPath = path.join(userDataPath, 'ringtones.json');
+const ringtoneDataCache = new Map(); // id -> base64 data URL
 
-function getRingtoneDataUrl() {
-  if (ringtoneCache) return ringtoneCache;
+function getUserRingtones() {
+  return readJSON(ringtonesMetaPath, []);
+}
+function saveUserRingtones(list) {
+  writeJSON(ringtonesMetaPath, list);
+}
+
+function getRingtoneDataUrl(id) {
+  if (id === 'silent') return null;
+  if (ringtoneDataCache.has(id)) return ringtoneDataCache.get(id);
+
+  let filePath = null;
+  if (id === 'default') {
+    filePath = DEFAULT_RINGTONE;
+  } else {
+    const meta = getUserRingtones().find(r => r.id === id);
+    if (meta) filePath = path.join(ringtonesDir, meta.file);
+  }
+  if (!filePath || !fs.existsSync(filePath)) return null;
+
   try {
-    if (!fs.existsSync(DEFAULT_RINGTONE)) return null;
-    const buf = fs.readFileSync(DEFAULT_RINGTONE);
-    const b64 = buf.toString('base64');
-    ringtoneCache = 'data:audio/mpeg;base64,' + b64;
-    return ringtoneCache;
+    const buf = fs.readFileSync(filePath);
+    const ext = path.extname(filePath).toLowerCase();
+    const mime = ext === '.wav' ? 'audio/wav' : ext === '.ogg' ? 'audio/ogg' : 'audio/mpeg';
+    const dataUrl = 'data:' + mime + ';base64,' + buf.toString('base64');
+    ringtoneDataCache.set(id, dataUrl);
+    return dataUrl;
   } catch (e) {
     console.error('[alarm] 铃声读取失败:', e.message);
     return null;
@@ -375,10 +396,60 @@ function getRingtoneDataUrl() {
 }
 
 ipcMain.handle('get-ringtones', () => {
-  return [
-    { id: 'default', name: '默认铃声' },
-    { id: 'silent', name: '静音' },
+  const builtins = [
+    { id: 'default', name: '默认铃声', builtin: true },
   ];
+  const customs = getUserRingtones().map(r => ({ id: r.id, name: r.name, builtin: false }));
+  const silent = { id: 'silent', name: '静音', builtin: true };
+  return [...builtins, ...customs, silent];
+});
+
+ipcMain.handle('pick-and-add-ringtone', async () => {
+  const list = getUserRingtones();
+  if (list.length >= 10) return { success: false, error: '自定义铃声最多 10 个' };
+  const win = settingsWin && !settingsWin.isDestroyed() ? settingsWin : petWin;
+  const opts = {
+    title: '选择铃声文件',
+    filters: [
+      { name: '音频文件', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'] },
+    ],
+    properties: ['openFile'],
+  };
+  const res = win && !win.isDestroyed()
+    ? await dialog.showOpenDialog(win, opts)
+    : await dialog.showOpenDialog(opts);
+  if (res.canceled || !res.filePaths.length) return { success: false, error: '已取消' };
+  const src = res.filePaths[0];
+  const ext = path.extname(src).toLowerCase() || '.mp3';
+  const id = 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  const file = id + ext;
+  try {
+    fs.mkdirSync(ringtonesDir, { recursive: true });
+    fs.copyFileSync(src, path.join(ringtonesDir, file));
+  } catch (e) {
+    return { success: false, error: '复制铃声失败: ' + e.message };
+  }
+  const name = path.basename(src, ext);
+  const updated = getUserRingtones();
+  updated.push({ id, name, file });
+  saveUserRingtones(updated);
+  return { success: true, ringtone: { id, name, builtin: false } };
+});
+
+ipcMain.handle('delete-ringtone', (_e, id) => {
+  if (!id || id === 'default' || id === 'silent') return { success: false, error: '该铃声不可删除' };
+  const list = getUserRingtones();
+  const idx = list.findIndex(r => r.id === id);
+  if (idx === -1) return { success: false, error: '铃声不存在' };
+  const meta = list[idx];
+  list.splice(idx, 1);
+  saveUserRingtones(list);
+  try {
+    const fp = path.join(ringtonesDir, meta.file);
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  } catch (e) { /* 忽略删除文件失败 */ }
+  ringtoneDataCache.delete(id);
+  return { success: true };
 });
 
 ipcMain.handle('stop-alarm-sound', () => {
@@ -419,7 +490,7 @@ function checkAlarms() {
       setTimeout(() => notif.close(), 8000);
     } catch(e) { /* 不支持系统通知就算了 */ }
     const ringtoneId = a.ringtone || 'default';
-    const ringtoneData = ringtoneId === 'silent' ? null : getRingtoneDataUrl();
+    const ringtoneData = getRingtoneDataUrl(ringtoneId);
     if (petWin && !petWin.isDestroyed()) {
       petWin.webContents.send('alarm-ring', { id: a.id, label: a.label || '闹钟', time: timeStr, ringtoneData });
     }

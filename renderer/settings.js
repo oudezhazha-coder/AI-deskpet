@@ -414,6 +414,7 @@ btnAddAlarm.addEventListener('click', () => {
   alarmTimeInput.value = '08:00';
   alarmLabelInput.value = '';
   alarmRepeatSelect.value = 'daily';
+  renderRingtoneSelect();
   alarmRingtoneSelect.value = 'default';
   alarmDaysPicker.classList.add('hidden');
   selectedDays = [];
@@ -460,3 +461,71 @@ if (window.petAPI.onAlarmRing) {
 
 // 启动
 loadAlarms();
+
+// ===== 铃声管理 =====
+const ringtoneListEl = document.getElementById('ringtone-list');
+const ringtoneCountEl = document.getElementById('ringtone-count');
+const btnAddRingtone = document.getElementById('btn-add-ringtone');
+
+let ringtones = [];
+
+async function loadRingtones() {
+  ringtones = await window.petAPI.getRingtones();
+  const customCount = ringtones.filter(r => !r.builtin).length;
+  ringtoneCountEl.textContent = customCount + '/10';
+  renderRingtoneList();
+  renderRingtoneSelect();
+}
+
+function renderRingtoneList() {
+  ringtoneListEl.innerHTML = '';
+  ringtones.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'ringtone-item' + (r.builtin ? '' : ' ringtone-deletable');
+    const tag = r.id === 'default' ? ' <span class="ringtone-tag">默认</span>'
+      : r.id === 'silent' ? ' <span class="ringtone-tag">内置</span>'
+      : ' <span class="ringtone-tag">自定义</span>';
+    item.innerHTML = '<span class="ringtone-name">' + escapeHtml(r.name) + '</span>' + tag;
+    if (!r.builtin) {
+      item.title = '右键删除';
+      item.addEventListener('contextmenu', async e => {
+        e.preventDefault();
+        if (!confirm('确定删除铃声 "' + r.name + '"？')) return;
+        const res = await window.petAPI.deleteRingtone(r.id);
+        if (res.success) {
+          loadRingtones();
+        } else {
+          alert('删除失败: ' + res.error);
+        }
+      });
+    }
+    ringtoneListEl.appendChild(item);
+  });
+}
+
+function renderRingtoneSelect() {
+  const sel = document.getElementById('alarm-ringtone-select');
+  const prev = sel.value;
+  sel.innerHTML = '';
+  ringtones.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.name;
+    sel.appendChild(opt);
+  });
+  if (prev) sel.value = prev;
+}
+
+btnAddRingtone.addEventListener('click', async () => {
+  const res = await window.petAPI.pickAndAddRingtone();
+  if (res.success) {
+    await loadRingtones();
+    // 新添加的铃声默认在弹窗里被选中
+    alarmRingtoneSelect.value = res.ringtone.id;
+  } else if (res.error !== '已取消') {
+    alert(res.error);
+  }
+});
+
+// 加载铃声
+loadRingtones();
