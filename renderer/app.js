@@ -324,6 +324,18 @@ window.petAPI.onAlarmStopSound(() => {
   stopAlarmSound();
 });
 
+// ===== 启动天气问候 =====
+window.petAPI.onAIGreeting(text => {
+  bubbleText.textContent = text;
+  bubble.classList.remove('hidden');
+  bouncePet();
+  if (bubbleTimer) clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(() => {
+    bubble.classList.add('hidden');
+    bubbleTimer = null;
+  }, 30000);
+});
+
 // ===== 启动 =====
 loadConfig();
 loadImage();

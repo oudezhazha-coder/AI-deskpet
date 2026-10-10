@@ -41,6 +41,12 @@ contextBridge.exposeInMainWorld('petAPI', {
     return () => ipcRenderer.removeListener('alarm-stop-sound', h);
   },
 
+  onAIGreeting: (cb) => {
+    const h = (_e, text) => cb(text);
+    ipcRenderer.on('ai-greeting', h);
+    return () => ipcRenderer.removeListener('ai-greeting', h);
+  },
+
   onConfigChanged: (cb) => {
     const h = (_e, c) => cb(c);
     ipcRenderer.on('config-changed', h);

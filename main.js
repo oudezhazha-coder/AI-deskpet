@@ -270,13 +270,18 @@ ipcMain.handle('set-ai-config', (_e, cfg) => {
 });
 ipcMain.handle('ai-chat', async (_e, payload) => {
   const cfg = getAIConfig();
+  const msgList = payload?.messages || [{ role: 'user', content: String(payload) }];
+  return callAI(msgList, cfg);
+});
+
+// 通用 AI 调用
+async function callAI(msgList, cfg) {
   if (!cfg.apiKey) return { success: false, error: '请先配置 API 密钥' };
   if (!cfg.apiUrl) return { success: false, error: '请先配置 API 地址' };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 90000); // 90s 超时
   try {
     const url = `${cfg.apiUrl.replace(/\/+$/, '')}/chat/completions`;
-    const msgList = payload?.messages || [{ role: 'user', content: String(payload) }];
     const res = await fetch(url, {
       method: 'POST',
       signal: controller.signal,
@@ -306,7 +311,59 @@ ipcMain.handle('ai-chat', async (_e, payload) => {
     if (err.name === 'AbortError') return { success: false, error: '请求超时，请检查网络或换一个更快的模型' };
     return { success: false, error: `请求失败: ${err.message}` };
   }
-});
+}
+
+// ===== 启动天气问候 =====
+async function getWeather() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch('https://wttr.in/?format=j1&lang=zh', { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const cc = data.current_condition?.[0];
+    if (!cc) return null;
+    const area = data.nearest_area?.[0];
+    const descArr = cc.lang_zh?.[0]?.value || cc.weatherDesc?.[0]?.value || '';
+    return {
+      city: area?.areaName?.[0]?.value || '',
+      text: String(descArr),
+      temp: cc.temp_C,
+      humidity: cc.humidity,
+      wind: cc.windspeedKmph,
+    };
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+let startupGreetingDone = false;
+async function sendStartupGreeting() {
+  if (startupGreetingDone) return;
+  startupGreetingDone = true;
+  const cfg = getAIConfig();
+  const weather = await getWeather();
+  let text = null;
+  if (cfg.apiKey) {
+    const userMsg = weather
+      ? `我刚启动电脑。现在实时天气：城市${weather.city}，天气${weather.text}，气温${weather.temp}°C，湿度${weather.humidity}%，风速${weather.wind}km/h。请用一句简短的问候跟我打招呼，并结合天气给一个实用的提醒（比如带伞、添衣、防晒），语气亲切可爱，不超过50字。`
+      : '我刚启动电脑，请用一句简短亲切的话欢迎我，不超过30字。';
+    const res = await callAI([{ role: 'user', content: userMsg }], cfg);
+    if (res.success) text = res.reply;
+  }
+  if (!text) {
+    text = weather
+      ? `${weather.city} ${weather.text} ${weather.temp}°C ｜ 记得关注天气变化哦～`
+      : '欢迎回来～ 有什么想聊的吗？';
+  }
+  setTimeout(() => {
+    if (petWin && !petWin.isDestroyed()) {
+      petWin.webContents.send('ai-greeting', text);
+    }
+  }, 1000);
+}
 
 // 闹钟
 ipcMain.handle('get-alarms', () => getAlarms());
@@ -521,6 +578,8 @@ app.whenReady().then(() => {
   createPetWindow();
   createTray();
   startAlarmTimer();
+  // 启动 4 秒后：拉天气 → 发给 AI 生成问候 → 桌宠气泡显示
+  setTimeout(sendStartupGreeting, 4000);
 });
 
 app.on('window-all-closed', () => {});
