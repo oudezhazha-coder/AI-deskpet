@@ -313,36 +313,48 @@ function httpsRequestWithBody(url, opts, bodyObj, signal) {
 async function callAI(msgList, cfg) {
   if (!cfg.apiKey) return { success: false, error: '请先配置 API 密钥' };
   if (!cfg.apiUrl) return { success: false, error: '请先配置 API 地址' };
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90000); // 90s 超时
-  try {
-    const url = `${cfg.apiUrl.replace(/\/+$/, '')}/chat/completions`;
-    const res = await httpsRequestWithBody(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
-    }, {
-      model: cfg.model || 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: cfg.systemPrompt || getDefaultAIConfig().systemPrompt },
-        ...msgList,
-      ],
-      max_tokens: 1024, temperature: 0.8,
-    }, controller.signal);
-    clearTimeout(timeout);
-    if (res.status < 200 || res.status >= 300) {
-      return { success: false, error: `API ${res.status}: ${res.text.slice(0, 200)}` };
+  // 网络类瞬时错误（连接重置/拒绝/断连等）自动重试一次；超时(90s)不重试，避免卡太久
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000); // 90s 超时
+    try {
+      const url = `${cfg.apiUrl.replace(/\/+$/, '')}/chat/completions`;
+      const res = await httpsRequestWithBody(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
+      }, {
+        model: cfg.model || 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: cfg.systemPrompt || getDefaultAIConfig().systemPrompt },
+          ...msgList,
+        ],
+        max_tokens: 1024, temperature: 0.8,
+      }, controller.signal);
+      clearTimeout(timeout);
+      if (res.status < 200 || res.status >= 300) {
+        return { success: false, error: `API ${res.status}: ${res.text.slice(0, 200)}` };
+      }
+      let data;
+      try { data = JSON.parse(res.text); }
+      catch { return { success: false, error: 'API 返回非 JSON：' + res.text.slice(0, 120) }; }
+      return { success: true, reply: (data.choices?.[0]?.message?.content || '').trim() };
+    } catch (err) {
+      clearTimeout(timeout);
+      let msg;
+      if (err.name === 'AbortError' || err.code === 'ETIMEDOUT' || err.message === 'timeout') {
+        msg = '请求超时，请检查网络或换一个更快的模型';
+      } else {
+        msg = `请求失败: ${err.message}`;
+      }
+      const networkErr = /ECONNRESET|ETIMEDOUT|ECONNREFUSED|EPIPE|socket hang up|ENETUNREACH|EAI_AGAIN/i.test(err.message || '');
+      if (attempt === 1 && networkErr) {
+        console.log('[AI重试]', msg);
+        continue; // 瞬时网络错误 → 重试一次
+      }
+      return { success: false, error: msg };
     }
-    let data;
-    try { data = JSON.parse(res.text); }
-    catch { return { success: false, error: 'API 返回非 JSON：' + res.text.slice(0, 120) }; }
-    return { success: true, reply: (data.choices?.[0]?.message?.content || '').trim() };
-  } catch (err) {
-    clearTimeout(timeout);
-    if (err.name === 'AbortError' || err.code === 'ETIMEDOUT' || err.message === 'timeout') {
-      return { success: false, error: '请求超时，请检查网络或换一个更快的模型' };
-    }
-    return { success: false, error: `请求失败: ${err.message}` };
   }
+  return { success: false, error: '请求失败' };
 }
 
 // ===== 启动天气问候 =====
