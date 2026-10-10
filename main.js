@@ -532,6 +532,35 @@ ipcMain.handle('append-chat-history', (_e, entry) => {
   return { success: true };
 });
 
+// ===== 定期主动搭话（每 40 分钟一次）=====
+let proactiveChatting = false;
+
+async function sendProactiveChat() {
+  if (proactiveChatting) return; // 防止上一次还没结束时重叠
+  const cfg = getAIConfig();
+  if (!cfg.apiKey || !cfg.apiUrl) return;
+  proactiveChatting = true;
+  try {
+    const res = await callAI([
+      { role: 'user', content: '主动说一句轻松随意的日常话：可以关心我、分享一个小趣事、或者俏皮地提醒我休息喝水活动一下，语气符合你的桌宠人设，简短可爱，不超过40字，不要用固定的问候模板，越自然越好。' },
+    ], cfg);
+    if (res.success && res.reply) {
+      console.log('[主动搭话]', res.reply);
+      setTimeout(() => {
+        if (petWin && !petWin.isDestroyed()) petWin.webContents.send('ai-greeting', res.reply);
+      }, 300);
+    } else {
+      console.log('[主动搭话失败]', res.error);
+    }
+  } finally {
+    proactiveChatting = false;
+  }
+}
+
+function startProactiveChat() {
+  setInterval(sendProactiveChat, 40 * 60 * 1000); // 40 分钟
+}
+
 // ===== 闹钟 =====
 const alarmsPath = path.join(userDataPath, 'alarms.json');
 let alarmTimer = null;
@@ -707,6 +736,7 @@ app.whenReady().then(() => {
   createPetWindow();
   createTray();
   startAlarmTimer();
+  startProactiveChat(); // 每 40 分钟 AI 主动搭话一次
   // 启动 4 秒后：定位/天气 → 发给 AI 生成问候 → 桌宠气泡显示
   setTimeout(sendStartupGreeting, 4000);
 });
