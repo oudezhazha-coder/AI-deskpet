@@ -126,11 +126,15 @@ document.addEventListener('mousemove', e => {
 // ===== 发送消息 =====
 async function sendMessage() {
   const text = chatInput.value.trim();
-  if (!text || chatting) return;
+  if (!text || chatting) {
+    console.log('[chat] 跳过发送:', { hasText: !!text, chatting });
+    return;
+  }
 
   chatInput.value = '';
   inputBar.classList.add('hidden');
   chatting = true;
+  console.log('[chat] 用户发送:', text.slice(0, 50));
 
   msgHistory.push({ role: 'user', content: text });
 

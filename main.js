@@ -84,7 +84,6 @@ function createPetWindow() {
   });
   petWin.setAlwaysOnTop(true, 'screen-saver');
   petWin.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  petWin.webContents.openDevTools();
   petWin.on('closed', () => { petWin = null; });
 }
 
@@ -111,7 +110,6 @@ function openSettingsWindow() {
   const sy = Math.round((sh - 620) / 2);
   settingsWin.setPosition(Math.max(sx, 0), Math.max(sy, 0));
   settingsWin.loadFile(path.join(__dirname, 'renderer', 'settings.html'));
-  settingsWin.webContents.openDevTools();
   settingsWin.on('closed', () => { settingsWin = null; });
 }
 
@@ -281,7 +279,10 @@ ipcMain.handle('set-ai-config', (_e, cfg) => {
 ipcMain.handle('ai-chat', async (_e, payload) => {
   const cfg = getAIConfig();
   const msgList = payload?.messages || [{ role: 'user', content: String(payload) }];
-  return callAI(msgList, cfg);
+  console.log('[chat] main 收到, 消息数:', msgList.length, '| api:', cfg.apiUrl, '| model:', cfg.model);
+  const res = await callAI(msgList, cfg);
+  console.log('[chat] main 结果:', res.success ? '成功' : ('失败: ' + res.error));
+  return res;
 });
 
 // 通用 AI 调用
@@ -346,7 +347,7 @@ async function callAI(msgList, cfg) {
       } else {
         msg = `请求失败: ${err.message}`;
       }
-      const networkErr = /ECONNRESET|ETIMEDOUT|ECONNREFUSED|EPIPE|socket hang up|ENETUNREACH|EAI_AGAIN/i.test(err.message || '');
+      const networkErr = /ECONNRESET|ETIMEDOUT|ECONNREFUSED|EPIPE|socket hang up|ENETUNREACH|EAI_AGAIN|SELF_SIGNED_CERT_IN_CHAIN|certificate|UNABLE_TO_VERIFY_LEAF_SIGNATURE/i.test(err.message || '');
       if (attempt === 1 && networkErr) {
         console.log('[AI重试]', msg);
         continue; // 瞬时网络错误 → 重试一次
