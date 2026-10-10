@@ -47,6 +47,13 @@ contextBridge.exposeInMainWorld('petAPI', {
     return () => ipcRenderer.removeListener('ai-greeting', h);
   },
 
+  onRequestCoords: (cb) => {
+    const h = () => cb();
+    ipcRenderer.on('request-coords', h);
+    return () => ipcRenderer.removeListener('request-coords', h);
+  },
+  reportCoords: (lat, lon) => ipcRenderer.invoke('report-coords', lat, lon),
+
   onConfigChanged: (cb) => {
     const h = (_e, c) => cb(c);
     ipcRenderer.on('config-changed', h);

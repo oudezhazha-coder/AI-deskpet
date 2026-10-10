@@ -244,6 +244,8 @@ html, body {
   display: flex; flex-direction: column; gap: 6px;
   max-height: 200px; overflow-y: auto; margin-top: 8px;
 }
+.city-row { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+.city-row .modal-input { flex: 1; }
 .ringtone-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 10px; border-radius: 6px;

@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, Notification } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, Notification, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -314,11 +314,22 @@ async function callAI(msgList, cfg) {
 }
 
 // ===== 启动天气问候 =====
-async function getWeather() {
+const WEATHERCODES = {
+  0: '晴', 1: '大部晴朗', 2: '多云', 3: '阴', 45: '雾', 48: '雾凇',
+  51: '毛毛雨', 53: '毛毛雨', 55: '毛毛雨',
+  61: '小雨', 63: '中雨', 65: '大雨',
+  71: '小雪', 73: '中雪', 75: '大雪', 77: '雪粒',
+  80: '阵雨', 81: '阵雨', 82: '强阵雨', 85: '阵雪', 86: '阵雪',
+  95: '雷雨', 96: '雷雨伴冰雹', 99: '强雷雨伴冰雹',
+};
+
+// 方式1：按城市名 / IP 查天气（wttr.in）
+async function getWeatherFromWttr(city) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const res = await fetch('https://wttr.in/?format=j1&lang=zh', { signal: controller.signal });
+    const q = city ? encodeURIComponent(city) + '/' : '';
+    const res = await fetch('https://wttr.in/' + q + '?format=j1&lang=zh', { signal: controller.signal });
     if (!res.ok) return null;
     const data = await res.json();
     const cc = data.current_condition?.[0];
@@ -326,7 +337,7 @@ async function getWeather() {
     const area = data.nearest_area?.[0];
     const descArr = cc.lang_zh?.[0]?.value || cc.weatherDesc?.[0]?.value || '';
     return {
-      city: area?.areaName?.[0]?.value || '',
+      city: city || area?.areaName?.[0]?.value || '',
       text: String(descArr),
       temp: cc.temp_C,
       humidity: cc.humidity,
@@ -339,23 +350,58 @@ async function getWeather() {
   }
 }
 
-let startupGreetingDone = false;
-async function sendStartupGreeting() {
-  if (startupGreetingDone) return;
-  startupGreetingDone = true;
+// 方式2：按经纬度查天气（open-meteo）+ 反查城市名（bigdatacloud）
+async function getWeatherByCoords(lat, lon) {
+  if (typeof lat !== 'number' || typeof lon !== 'number') return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(
+      'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto',
+      { signal: controller.signal }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const cw = data.current_weather;
+    if (!cw) return null;
+    let city = '';
+    try {
+      const rc = await fetch(
+        'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon + '&localityLanguage=zh',
+        { signal: controller.signal }
+      );
+      if (rc.ok) {
+        const rd = await rc.json();
+        city = rd.city || rd.locality || rd.principalSubdivision || '';
+      }
+    } catch (e) { /* 城市反查失败则留空 */ }
+    return {
+      city,
+      text: WEATHERCODES[cw.weathercode] || '天气未知',
+      temp: cw.temperature,
+      humidity: '',
+      wind: cw.windspeed,
+    };
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function sendGreeting(weather) {
   const cfg = getAIConfig();
-  const weather = await getWeather();
   let text = null;
   if (cfg.apiKey) {
     const userMsg = weather
-      ? `我刚启动电脑。现在实时天气：城市${weather.city}，天气${weather.text}，气温${weather.temp}°C，湿度${weather.humidity}%，风速${weather.wind}km/h。请用一句简短的问候跟我打招呼，并结合天气给一个实用的提醒（比如带伞、添衣、防晒），语气亲切可爱，不超过50字。`
+      ? `我刚启动电脑。现在实时天气：城市${weather.city || '你所在城市'}，天气${weather.text}，气温${weather.temp}°C${weather.humidity ? '，湿度' + weather.humidity + '%' : ''}${weather.wind ? '，风速' + weather.wind + 'km/h' : ''}。请用一句简短的问候跟我打招呼，并结合天气给一个实用的提醒（比如带伞、添衣、防晒），语气亲切可爱，不超过50字。`
       : '我刚启动电脑，请用一句简短亲切的话欢迎我，不超过30字。';
     const res = await callAI([{ role: 'user', content: userMsg }], cfg);
     if (res.success) text = res.reply;
   }
   if (!text) {
     text = weather
-      ? `${weather.city} ${weather.text} ${weather.temp}°C ｜ 记得关注天气变化哦～`
+      ? `${weather.city || ''} ${weather.text} ${weather.temp}°C ｜ 记得关注天气变化哦～`
       : '欢迎回来～ 有什么想聊的吗？';
   }
   setTimeout(() => {
@@ -363,6 +409,53 @@ async function sendStartupGreeting() {
       petWin.webContents.send('ai-greeting', text);
     }
   }, 1000);
+}
+
+let startupGreetingDone = false;
+let readyForCoords = false;
+let coordsResolver = null;
+let coordsTimer = null;
+
+ipcMain.handle('report-coords', (_e, lat, lon) => {
+  if (readyForCoords && coordsResolver && typeof lat === 'number' && typeof lon === 'number') {
+    clearTimeout(coordsTimer);
+    readyForCoords = false;
+    const r = coordsResolver;
+    coordsResolver = null;
+    r({ lat, lon });
+  }
+  return { ok: true };
+});
+
+function waitForCoords(ms) {
+  return new Promise(resolve => {
+    readyForCoords = true;
+    coordsResolver = resolve;
+    coordsTimer = setTimeout(() => {
+      readyForCoords = false;
+      coordsResolver = null;
+      resolve(null);
+    }, ms);
+  });
+}
+
+async function sendStartupGreeting() {
+  if (startupGreetingDone) return;
+  startupGreetingDone = true;
+  const cfg = getConfig();
+  const city = cfg.city || '';
+  let weather = null;
+  if (city) {
+    // 用户手动配置的城市最优先
+    weather = await getWeatherFromWttr(city);
+  } else {
+    // 请求 pet 窗口用系统定位拿坐标
+    if (petWin && !petWin.isDestroyed()) petWin.webContents.send('request-coords');
+    const coords = await waitForCoords(8000);
+    if (coords) weather = await getWeatherByCoords(coords.lat, coords.lon);
+    if (!weather) weather = await getWeatherFromWttr('');
+  }
+  await sendGreeting(weather);
 }
 
 // 闹钟
@@ -575,10 +668,16 @@ ipcMain.on('drag-move', (_e, { x, y }) => {
 
 // ===== 生命周期 =====
 app.whenReady().then(() => {
+  // 允许渲染进程使用系统定位（geolocation）
+  session.defaultSession.setPermissionRequestHandler((wc, permission, cb) => {
+    cb(permission === 'geolocation');
+  });
+  session.defaultSession.setPermissionCheckHandler((wc, permission) => permission === 'geolocation');
+
   createPetWindow();
   createTray();
   startAlarmTimer();
-  // 启动 4 秒后：拉天气 → 发给 AI 生成问候 → 桌宠气泡显示
+  // 启动 4 秒后：定位/天气 → 发给 AI 生成问候 → 桌宠气泡显示
   setTimeout(sendStartupGreeting, 4000);
 });
 

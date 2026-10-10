@@ -336,6 +336,18 @@ window.petAPI.onAIGreeting(text => {
   }, 30000);
 });
 
+// 主进程请求坐标时：用系统定位获取经纬度
+window.petAPI.onRequestCoords(() => {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      window.petAPI.reportCoords(pos.coords.latitude, pos.coords.longitude);
+    },
+    () => { /* 定位失败则主进程走 IP 兜底 */ },
+    { timeout: 9000, maximumAge: 600000, enableHighAccuracy: false }
+  );
+});
+
 // ===== 启动 =====
 loadConfig();
 loadImage();

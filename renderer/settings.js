@@ -529,3 +529,20 @@ btnAddRingtone.addEventListener('click', async () => {
 
 // 加载铃声
 loadRingtones();
+
+// ===== 所在城市 =====
+const cityInput = document.getElementById('city-input');
+const btnSaveCity = document.getElementById('btn-save-city');
+
+async function loadCity() {
+  const cfg = await window.petAPI.getConfig();
+  cityInput.value = cfg.city || '';
+}
+btnSaveCity?.addEventListener('click', async () => {
+  const city = cityInput.value.trim();
+  await window.petAPI.setConfig({ city });
+  btnSaveCity.textContent = '✓ 已保存';
+  setTimeout(() => { btnSaveCity.textContent = '保存'; }, 1500);
+});
+
+loadCity();
