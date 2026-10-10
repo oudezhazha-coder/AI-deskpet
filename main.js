@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, Notification, session } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, Notification, session, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -16,8 +16,12 @@ function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 function readJSON(p, def) {
-  try { return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : def; }
-  catch { return def; }
+  try {
+    if (!fs.existsSync(p)) return def;
+    let txt = fs.readFileSync(p, 'utf8');
+    if (txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1); // 兼容带 BOM 的 JSON
+    return JSON.parse(txt);
+  } catch { return def; }
 }
 function writeJSON(p, data) {
   ensureDir(path.dirname(p));
@@ -147,6 +151,7 @@ ipcMain.handle('set-config', (_e, cfg) => {
   if (cfg.theme !== undefined) c.theme = cfg.theme;
   if (cfg.colors !== undefined) c.colors = cfg.colors;
   if (cfg.pet !== undefined) c.pet = cfg.pet;
+  if (cfg.city !== undefined) c.city = cfg.city;
   saveConfig(c);
   if (petWin && !petWin.isDestroyed()) petWin.webContents.send('config-changed', c);
   if (cfg.size && petWin && !petWin.isDestroyed()) {
@@ -275,6 +280,31 @@ ipcMain.handle('ai-chat', async (_e, payload) => {
 });
 
 // 通用 AI 调用
+// Node 原生 https 请求（OpenSSL 栈直连；Chromium 网络栈对某些网关 TLS 指纹会 RST）
+function httpsRequestWithBody(url, opts, bodyObj, signal) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const mod = u.protocol === 'http:' ? require('http') : require('https');
+    const payload = bodyObj === undefined ? null : JSON.stringify(bodyObj);
+    const req = mod.request({
+      hostname: u.hostname,
+      port: u.port || (u.protocol === 'http:' ? 80 : 443),
+      path: u.pathname + u.search,
+      method: opts.method || 'POST',
+      headers: Object.assign({}, opts.headers, payload ? { 'Content-Length': Buffer.byteLength(payload) } : {}),
+      signal,
+    }, res => {
+      let raw = '';
+      res.setEncoding('utf8');
+      res.on('data', d => { raw += d; });
+      res.on('end', () => resolve({ status: res.statusCode, text: raw }));
+    });
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
 async function callAI(msgList, cfg) {
   if (!cfg.apiKey) return { success: false, error: '请先配置 API 密钥' };
   if (!cfg.apiUrl) return { success: false, error: '请先配置 API 地址' };
@@ -282,33 +312,30 @@ async function callAI(msgList, cfg) {
   const timeout = setTimeout(() => controller.abort(), 90000); // 90s 超时
   try {
     const url = `${cfg.apiUrl.replace(/\/+$/, '')}/chat/completions`;
-    const res = await fetch(url, {
+    const res = await httpsRequestWithBody(url, {
       method: 'POST',
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cfg.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: cfg.model || 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: cfg.systemPrompt || getDefaultAIConfig().systemPrompt },
-          ...msgList,
-        ],
-        max_tokens: 1024, temperature: 0.8,
-      }),
-    });
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
+    }, {
+      model: cfg.model || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: cfg.systemPrompt || getDefaultAIConfig().systemPrompt },
+        ...msgList,
+      ],
+      max_tokens: 1024, temperature: 0.8,
+    }, controller.signal);
     clearTimeout(timeout);
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      const detail = t ? t.slice(0, 200) : res.statusText;
-      return { success: false, error: `API ${res.status}: ${detail}` };
+    if (res.status < 200 || res.status >= 300) {
+      return { success: false, error: `API ${res.status}: ${res.text.slice(0, 200)}` };
     }
-    const data = await res.json();
+    let data;
+    try { data = JSON.parse(res.text); }
+    catch { return { success: false, error: 'API 返回非 JSON：' + res.text.slice(0, 120) }; }
     return { success: true, reply: (data.choices?.[0]?.message?.content || '').trim() };
   } catch (err) {
     clearTimeout(timeout);
-    if (err.name === 'AbortError') return { success: false, error: '请求超时，请检查网络或换一个更快的模型' };
+    if (err.name === 'AbortError' || err.code === 'ETIMEDOUT' || err.message === 'timeout') {
+      return { success: false, error: '请求超时，请检查网络或换一个更快的模型' };
+    }
     return { success: false, error: `请求失败: ${err.message}` };
   }
 }
@@ -398,12 +425,14 @@ async function sendGreeting(weather) {
       : '我刚启动电脑，请用一句简短亲切的话欢迎我，不超过30字。';
     const res = await callAI([{ role: 'user', content: userMsg }], cfg);
     if (res.success) text = res.reply;
+    else console.log('[问候AI失败]', res.error);
   }
   if (!text) {
     text = weather
       ? `${weather.city || ''} ${weather.text} ${weather.temp}°C ｜ 记得关注天气变化哦～`
       : '欢迎回来～ 有什么想聊的吗？';
   }
+  console.log('[问候]', text);
   setTimeout(() => {
     if (petWin && !petWin.isDestroyed()) {
       petWin.webContents.send('ai-greeting', text);
@@ -455,6 +484,7 @@ async function sendStartupGreeting() {
     if (coords) weather = await getWeatherByCoords(coords.lat, coords.lon);
     if (!weather) weather = await getWeatherFromWttr('');
   }
+  console.log('[问候天气]', weather ? `${weather.city} ${weather.text} ${weather.temp}°C 湿度${weather.humidity || '-'}%` : '无天气数据');
   await sendGreeting(weather);
 }
 
