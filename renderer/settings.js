@@ -546,3 +546,16 @@ btnSaveCity?.addEventListener('click', async () => {
 });
 
 loadCity();
+
+// ===== 主动搭话间隔 =====
+const chatIntervalSelect = document.getElementById('chat-interval-select');
+
+async function loadChatInterval() {
+  const cfg = await window.petAPI.getConfig();
+  chatIntervalSelect.value = String(cfg.chatIntervalMin ?? 40);
+}
+chatIntervalSelect?.addEventListener('change', async () => {
+  await window.petAPI.setConfig({ chatIntervalMin: Number(chatIntervalSelect.value) });
+});
+
+loadChatInterval();

@@ -133,20 +133,6 @@ function createTray() {
         },
       },
       { type: 'separator' },
-      {
-        label: '🤖 主动搭话间隔',
-        submenu: CHAT_INTERVALS.map(iv => ({
-          label: iv.label,
-          type: 'radio',
-          checked: (cfg.chatIntervalMin || 0) === iv.value,
-          click: () => {
-            const c = getConfig(); c.chatIntervalMin = iv.value; saveConfig(c);
-            applyProactiveChatTimer();
-            createTray();
-          },
-        })),
-      },
-      { type: 'separator' },
       { label: '⚙️ 设置', click: () => openSettingsWindow() },
       { type: 'separator' },
       { label: '❌ 退出', click: () => app.quit() },
@@ -167,7 +153,10 @@ ipcMain.handle('set-config', (_e, cfg) => {
   if (cfg.colors !== undefined) c.colors = cfg.colors;
   if (cfg.pet !== undefined) c.pet = cfg.pet;
   if (cfg.city !== undefined) c.city = cfg.city;
-  if (cfg.chatIntervalMin !== undefined) c.chatIntervalMin = cfg.chatIntervalMin;
+  if (cfg.chatIntervalMin !== undefined) {
+    c.chatIntervalMin = cfg.chatIntervalMin;
+    applyProactiveChatTimer(cfg.chatIntervalMin); // 立即按新间隔重载定时器
+  }
   saveConfig(c);
   if (petWin && !petWin.isDestroyed()) petWin.webContents.send('config-changed', c);
   if (cfg.size && petWin && !petWin.isDestroyed()) {
@@ -548,18 +537,7 @@ ipcMain.handle('append-chat-history', (_e, entry) => {
   return { success: true };
 });
 
-// ===== 定期主动搭话（间隔可在托盘菜单调整）=====
-const CHAT_INTERVALS = [
-  { label: '停用', value: 0 },
-  { label: '1 分钟', value: 1 },
-  { label: '5 分钟', value: 5 },
-  { label: '10 分钟', value: 10 },
-  { label: '20 分钟', value: 20 },
-  { label: '30 分钟', value: 30 },
-  { label: '40 分钟', value: 40 },
-  { label: '60 分钟', value: 60 },
-  { label: '120 分钟', value: 120 },
-];
+// ===== 定期主动搭话（间隔在设置页可调）=====
 let proactiveTimer = null;
 let proactiveChatting = false;
 
@@ -585,9 +563,9 @@ async function sendProactiveChat() {
   }
 }
 
-function applyProactiveChatTimer() {
+function applyProactiveChatTimer(min) {
   if (proactiveTimer) { clearInterval(proactiveTimer); proactiveTimer = null; }
-  const min = getConfig().chatIntervalMin || 0;
+  if (min === undefined) min = getConfig().chatIntervalMin || 0;
   if (min > 0) proactiveTimer = setInterval(sendProactiveChat, min * 60 * 1000);
   console.log('[主动搭话] 间隔:', min > 0 ? min + ' 分钟' : '停用');
 }

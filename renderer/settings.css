@@ -246,6 +246,7 @@ html, body {
 }
 .city-row { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
 .city-row .modal-input { flex: 1; }
+#chat-interval-select { width: 100%; }
 .ringtone-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 10px; border-radius: 6px;
