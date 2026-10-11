@@ -4,12 +4,44 @@
   "description": "AI 桌宠 — 桌面聊天精灵",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win"
   },
   "devDependencies": {
-    "electron": "^28.3.3"
+    "electron": "^28.3.3",
+    "electron-builder": "^26.15.3"
   },
   "allowScripts": {
     "electron": true
+  },
+  "build": {
+    "appId": "com.ai.desktop-pet",
+    "productName": "PPPET",
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "icon.png",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": ["portable", "nsis"]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "PPPET",
+      "artifactName": "PPPET-安装包-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "PPPET-便携版-${version}.exe"
+    }
   }
 }

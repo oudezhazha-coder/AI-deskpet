@@ -77,6 +77,7 @@ function createPetWindow() {
     width: 260, height: 380,
     frame: false, transparent: true,
     resizable: true, alwaysOnTop: true, skipTaskbar: true, hasShadow: false,
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
@@ -115,7 +116,7 @@ function openSettingsWindow() {
 
 // ===== 系统托盘 =====
 function createTray() {
-  const ico = nativeImage.createEmpty();
+  const ico = nativeImage.createFromPath(path.join(__dirname, 'icon.png'));
   tray = new Tray(ico);
   tray.setToolTip('AI 桌宠 🐾');
   tray.on('click', () => openSettingsWindow());
