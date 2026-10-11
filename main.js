@@ -589,7 +589,7 @@ const alarmsPath = path.join(userDataPath, 'alarms.json');
 let alarmTimer = null;
 
 // 铃声
-const DEFAULT_RINGTONE = 'D:\\新建文件夹 (2)\\SWIN - 只因你太美.mp3';
+const DEFAULT_RINGTONE = path.join(__dirname, 'resources', 'ringtones', 'default.mp3');
 const ringtonesDir = path.join(userDataPath, 'ringtones');
 const ringtonesMetaPath = path.join(userDataPath, 'ringtones.json');
 const ringtoneDataCache = new Map(); // id -> base64 data URL
